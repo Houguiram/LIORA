@@ -1,5 +1,5 @@
-import { createTool } from '@mastra/core/tools';
-import { z } from 'zod';
+import { createTool } from "@mastra/core/tools";
+import { z } from "zod";
 
 interface GeocodingResponse {
   results: {
@@ -21,10 +21,10 @@ interface WeatherResponse {
 }
 
 export const weatherTool = createTool({
-  id: 'get-weather',
-  description: 'Get current weather for a location',
+  id: "get-weather",
+  description: "Get current weather for a location",
   inputSchema: z.object({
-    location: z.string().describe('City name'),
+    location: z.string().describe("City name"),
   }),
   outputSchema: z.object({
     temperature: z.number(),
@@ -36,7 +36,8 @@ export const weatherTool = createTool({
     location: z.string(),
   }),
   execute: async ({ context }) => {
-    return await getWeather(context.location);
+    return await getWeatherMock(context.location);
+    // return await getWeather(context.location);
   },
 });
 
@@ -67,36 +68,75 @@ const getWeather = async (location: string) => {
   };
 };
 
+// Mock geocoding and weather data for offline testing
+const getWeatherMock = async (_location: string) => {
+  // 🌍 Mock geocoding response
+  const geocodingData: GeocodingResponse = {
+    results: [
+      {
+        latitude: 40.7128, // New York
+        longitude: -74.006,
+        name: "New York",
+      },
+    ],
+  };
+
+  const { latitude, longitude, name } = geocodingData.results[0];
+
+  // ☀️ Mock weather data (current weather)
+  const weatherData: WeatherResponse = {
+    current: {
+      time: "2023-10-01T12:00:00Z",
+      temperature_2m: 20,
+      apparent_temperature: 22,
+      relative_humidity_2m: 65,
+      wind_speed_10m: 5,
+      wind_gusts_10m: 12,
+      weather_code: 0, // Clear sky
+    },
+  };
+
+  return {
+    temperature: weatherData.current.temperature_2m,
+    feelsLike: weatherData.current.apparent_temperature,
+    humidity: weatherData.current.relative_humidity_2m,
+    windSpeed: weatherData.current.wind_speed_10m,
+    windGust: weatherData.current.wind_gusts_10m,
+    conditions: getWeatherCondition(weatherData.current.weather_code),
+    location: name,
+  };
+};
+
 function getWeatherCondition(code: number): string {
   const conditions: Record<number, string> = {
-    0: 'Clear sky',
-    1: 'Mainly clear',
-    2: 'Partly cloudy',
-    3: 'Overcast',
-    45: 'Foggy',
-    48: 'Depositing rime fog',
-    51: 'Light drizzle',
-    53: 'Moderate drizzle',
-    55: 'Dense drizzle',
-    56: 'Light freezing drizzle',
-    57: 'Dense freezing drizzle',
-    61: 'Slight rain',
-    63: 'Moderate rain',
-    65: 'Heavy rain',
-    66: 'Light freezing rain',
-    67: 'Heavy freezing rain',
-    71: 'Slight snow fall',
-    73: 'Moderate snow fall',
-    75: 'Heavy snow fall',
-    77: 'Snow grains',
-    80: 'Slight rain showers',
-    81: 'Moderate rain showers',
-    82: 'Violent rain showers',
-    85: 'Slight snow showers',
-    86: 'Heavy snow showers',
-    95: 'Thunderstorm',
-    96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail',
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Foggy",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    56: "Light freezing drizzle",
+    57: "Dense freezing drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    66: "Light freezing rain",
+    67: "Heavy freezing rain",
+    71: "Slight snow fall",
+    73: "Moderate snow fall",
+    75: "Heavy snow fall",
+    77: "Snow grains",
+    80: "Slight rain showers",
+    81: "Moderate rain showers",
+    82: "Violent rain showers",
+    85: "Slight snow showers",
+    86: "Heavy snow showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail",
   };
-  return conditions[code] || 'Unknown';
+  return conditions[code] || "Unknown";
 }
