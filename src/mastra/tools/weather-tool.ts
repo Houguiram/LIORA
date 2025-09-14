@@ -1,5 +1,7 @@
 import { createTool } from "@mastra/core/tools";
+import { Effect } from "effect";
 import { z } from "zod";
+import { Weather, WeatherSchema } from "../../effects/weather-service";
 
 interface GeocodingResponse {
   results: {
@@ -36,10 +38,25 @@ export const weatherTool = createTool({
     location: z.string(),
   }),
   execute: async ({ context }) => {
+    // const runnable = getWeatherRunnable(context.location);
+    // const result = Effect.runPromise(
+    //   runnable.pipe(
+    //     Effect.provideService(Weather, {
+    //       getWeather: getWeatherMock(context.location),
+    //     }),
+    //   ),
+    // );
     return await getWeatherMock(context.location);
     // return await getWeather(context.location);
   },
 });
+
+// const getWeatherRunnable = (location: string) =>
+//   Effect.gen(function* () {
+//     const weatherService = yield* Weather;
+//     const weatherResponse = yield* weatherService.getWeather(location);
+//     return weatherResponse;
+//   });
 
 const getWeather = async (location: string) => {
   const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
@@ -104,7 +121,7 @@ const getWeatherMock = async (_location: string) => {
     windGust: weatherData.current.wind_gusts_10m,
     conditions: getWeatherCondition(weatherData.current.weather_code),
     location: name,
-  };
+  } as WeatherSchema;
 };
 
 function getWeatherCondition(code: number): string {
