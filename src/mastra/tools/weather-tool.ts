@@ -1,26 +1,10 @@
 import { createTool } from "@mastra/core/tools";
 import { Effect } from "effect";
 import { z } from "zod";
-import { Weather, WeatherSchema } from "../../effects/weather-service";
+import { Weather, WeatherSchema, weatherServiceLive, weatherServiceMock } from "../../effects/weather-service";
 
-interface GeocodingResponse {
-  results: {
-    latitude: number;
-    longitude: number;
-    name: string;
-  }[];
-}
-interface WeatherResponse {
-  current: {
-    time: string;
-    temperature_2m: number;
-    apparent_temperature: number;
-    relative_humidity_2m: number;
-    wind_speed_10m: number;
-    wind_gusts_10m: number;
-    weather_code: number;
-  };
-}
+// Choose implementation here
+const USE_MOCK = true;
 
 export const weatherTool = createTool({
   id: "get-weather",
@@ -38,122 +22,20 @@ export const weatherTool = createTool({
     location: z.string(),
   }),
   execute: async ({ context }) => {
-    // const runnable = getWeatherRunnable(context.location);
-    // const result = Effect.runPromise(
-    //   runnable.pipe(
-    //     Effect.provideService(Weather, {
-    //       getWeather: getWeatherMock(context.location),
-    //     }),
-    //   ),
-    // );
-    return await getWeatherMock(context.location);
-    // return await getWeather(context.location);
+    const location = (context as any).location as string; // tool runtime provides validated input on context
+    const service = USE_MOCK ? weatherServiceMock : weatherServiceLive;
+
+    const program = getWeatherRunnable(location).pipe(Effect.provideService(Weather, service));
+
+    return await Effect.runPromise(program);
   },
 });
 
-// const getWeatherRunnable = (location: string) =>
-//   Effect.gen(function* () {
-//     const weatherService = yield* Weather;
-//     const weatherResponse = yield* weatherService.getWeather(location);
-//     return weatherResponse;
-//   });
+const getWeatherRunnable = (location: string) =>
+  Effect.gen(function* () {
+    const weatherService = yield* Weather;
+    const weatherResponse = yield* weatherService.getWeather(location);
+    return weatherResponse;
+  });
 
-const getWeather = async (location: string) => {
-  const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
-  const geocodingResponse = await fetch(geocodingUrl);
-  const geocodingData = (await geocodingResponse.json()) as GeocodingResponse;
-
-  if (!geocodingData.results?.[0]) {
-    throw new Error(`Location '${location}' not found`);
-  }
-
-  const { latitude, longitude, name } = geocodingData.results[0];
-
-  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code`;
-
-  const response = await fetch(weatherUrl);
-  const data = (await response.json()) as WeatherResponse;
-
-  return {
-    temperature: data.current.temperature_2m,
-    feelsLike: data.current.apparent_temperature,
-    humidity: data.current.relative_humidity_2m,
-    windSpeed: data.current.wind_speed_10m,
-    windGust: data.current.wind_gusts_10m,
-    conditions: getWeatherCondition(data.current.weather_code),
-    location: name,
-  };
-};
-
-// Mock geocoding and weather data for offline testing
-const getWeatherMock = async (_location: string) => {
-  // 🌍 Mock geocoding response
-  const geocodingData: GeocodingResponse = {
-    results: [
-      {
-        latitude: 40.7128, // New York
-        longitude: -74.006,
-        name: "New York",
-      },
-    ],
-  };
-
-  const { latitude, longitude, name } = geocodingData.results[0];
-
-  // ☀️ Mock weather data (current weather)
-  const weatherData: WeatherResponse = {
-    current: {
-      time: "2023-10-01T12:00:00Z",
-      temperature_2m: 20,
-      apparent_temperature: 22,
-      relative_humidity_2m: 65,
-      wind_speed_10m: 5,
-      wind_gusts_10m: 12,
-      weather_code: 0, // Clear sky
-    },
-  };
-
-  return {
-    temperature: weatherData.current.temperature_2m,
-    feelsLike: weatherData.current.apparent_temperature,
-    humidity: weatherData.current.relative_humidity_2m,
-    windSpeed: weatherData.current.wind_speed_10m,
-    windGust: weatherData.current.wind_gusts_10m,
-    conditions: getWeatherCondition(weatherData.current.weather_code),
-    location: name,
-  } as WeatherSchema;
-};
-
-function getWeatherCondition(code: number): string {
-  const conditions: Record<number, string> = {
-    0: "Clear sky",
-    1: "Mainly clear",
-    2: "Partly cloudy",
-    3: "Overcast",
-    45: "Foggy",
-    48: "Depositing rime fog",
-    51: "Light drizzle",
-    53: "Moderate drizzle",
-    55: "Dense drizzle",
-    56: "Light freezing drizzle",
-    57: "Dense freezing drizzle",
-    61: "Slight rain",
-    63: "Moderate rain",
-    65: "Heavy rain",
-    66: "Light freezing rain",
-    67: "Heavy freezing rain",
-    71: "Slight snow fall",
-    73: "Moderate snow fall",
-    75: "Heavy snow fall",
-    77: "Snow grains",
-    80: "Slight rain showers",
-    81: "Moderate rain showers",
-    82: "Violent rain showers",
-    85: "Slight snow showers",
-    86: "Heavy snow showers",
-    95: "Thunderstorm",
-    96: "Thunderstorm with slight hail",
-    99: "Thunderstorm with heavy hail",
-  };
-  return conditions[code] || "Unknown";
-}
+// helper moved to effects; not needed here
