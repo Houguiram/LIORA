@@ -1,4 +1,9 @@
-import { Effect, Context, pipe } from "effect";
+import { Effect, pipe } from "effect";
+import {
+  BestPracticeService,
+  BestPracticeServiceMock,
+} from "./best-practice-service";
+import { RecipeService, RecipeServiceMock } from "./recipe-service";
 
 // Workflow strategy 1
 // 1. Identify prompt characteristics
@@ -17,35 +22,6 @@ import { Effect, Context, pipe } from "effect";
 // 1. Find best practices relevant for prompt (BestPracticeService.getRelevantForPrompt(prompt))
 // 2. Generate a recipe with steps and optimised prompts (RecipeService.generate(prompt, bestPractices))
 
-export interface BestPractice {
-  insight: string;
-  relevantModels: string[];
-}
-export interface Recipe {
-  prompt: string; //TODO
-}
-
-export interface BestPracticeServiceShape {
-  readonly getRelevantForPrompt: (
-    prompt: string,
-  ) => Effect.Effect<BestPractice[]>;
-}
-export class BestPracticeService extends Context.Tag("BestPracticeService")<
-  BestPracticeService,
-  BestPracticeServiceShape
->() {}
-
-export interface RecipeServiceShape {
-  readonly generate: (args: {
-    prompt: string;
-    bestPractices: BestPractice[];
-  }) => Effect.Effect<Recipe>;
-}
-export class RecipeService extends Context.Tag("RecipeService")<
-  RecipeService,
-  RecipeServiceShape
->() {}
-
 export const recipeAgentWorkflow = async (userPrompt: string) => {
   const program = Effect.gen(function* () {
     const bestPracticeService = yield* BestPracticeService;
@@ -61,12 +37,9 @@ export const recipeAgentWorkflow = async (userPrompt: string) => {
   });
   const runnable = pipe(
     program,
-    Effect.provideService(BestPracticeService, {
-      getRelevantForPrompt: (_prompt: string) => Effect.succeed([]), //TODO
-    }),
-    Effect.provideService(RecipeService, {
-      generate: (_args) => Effect.succeed({ prompt: "FAKE" }), //TODO
-    }),
+    Effect.provideService(BestPracticeService, BestPracticeServiceMock),
+    Effect.provideService(RecipeService, RecipeServiceMock),
   );
   const recipe = await Effect.runPromise(runnable);
+  return recipe;
 };
