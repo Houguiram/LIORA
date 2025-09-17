@@ -6,17 +6,17 @@ import { weatherTool } from "../tools/weather-tool";
 
 import { createOllama } from "ollama-ai-provider";
 import { bestPracticeTool } from "../tools/best-practice-tool";
+import { IS_OFFLINE } from "../../utils/offline";
 
 const OLLAMA_HOST = "localhost";
-// const OLLAMA_HOST = process.env.OLLAMA_HOST
-
 const ollama = createOllama({
   baseURL: `http://${OLLAMA_HOST}:11434/api`,
 });
-
-// const modelId = "deepseek-r1:8b";
 const modelId = "llama3.2";
-const model = ollama.chat(modelId, { simulateStreaming: true });
+const localModel = ollama.chat(modelId, { simulateStreaming: true });
+const onlineModel = openai("gpt-4o-mini");
+
+const model = IS_OFFLINE ? localModel : onlineModel;
 
 //TODO: See if recipe tool is even needed, or if agent can figure it out
 export const genAiRecipeAgent = new Agent({
@@ -54,7 +54,6 @@ export const genAiRecipeAgent = new Agent({
   - The recipe / output should be a JSON object in this exact format: { model: string; optimisedPrompt: string; }.
   - Only return the output or the error message, nothing else.
 `,
-  // model: openai("gpt-4o-mini"),
   model,
   tools: { bestPracticeTool },
   memory: new Memory({

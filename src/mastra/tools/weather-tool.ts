@@ -1,10 +1,13 @@
 import { createTool } from "@mastra/core/tools";
 import { Effect } from "effect";
 import { z } from "zod";
-import { Weather, WeatherSchema, weatherServiceLive, weatherServiceMock } from "../../effects/weather-service";
-
-// Choose implementation here
-const USE_MOCK = true;
+import {
+  Weather,
+  WeatherSchema,
+  weatherServiceLive,
+  weatherServiceMock,
+} from "../../effects/weather-service";
+import { IS_OFFLINE } from "../../utils/offline";
 
 export const weatherTool = createTool({
   id: "get-weather",
@@ -23,9 +26,11 @@ export const weatherTool = createTool({
   }),
   execute: async ({ context }) => {
     const location = (context as any).location as string; // tool runtime provides validated input on context
-    const service = USE_MOCK ? weatherServiceMock : weatherServiceLive;
+    const service = IS_OFFLINE ? weatherServiceMock : weatherServiceLive;
 
-    const program = getWeatherRunnable(location).pipe(Effect.provideService(Weather, service));
+    const program = getWeatherRunnable(location).pipe(
+      Effect.provideService(Weather, service),
+    );
 
     return await Effect.runPromise(program);
   },

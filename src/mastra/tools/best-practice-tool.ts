@@ -6,9 +6,7 @@ import {
   BestPracticeServiceLive,
   BestPracticeServiceMock,
 } from "../../effects/best-practice-service";
-
-// Choose implementation here
-const USE_MOCK = true;
+import { IS_OFFLINE } from "../../utils/offline";
 
 export const bestPracticeTool = createTool({
   id: "get-best-practices",
@@ -25,7 +23,7 @@ export const bestPracticeTool = createTool({
     ),
   }),
   execute: async ({ context }) => {
-    const service = USE_MOCK
+    const service = IS_OFFLINE
       ? BestPracticeServiceMock
       : BestPracticeServiceLive;
 
