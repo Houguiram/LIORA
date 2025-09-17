@@ -1,4 +1,8 @@
 import { Effect, Context, pipe } from "effect";
+import {
+  BestPracticeRepository,
+  BestPracticeRepositoryLive,
+} from "./best-practice-repository";
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
@@ -30,8 +34,14 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
 };
 
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
-  //@ts-ignore -- To be implemented
-  getRelevantForPrompt: (_prompt: string) => Effect.fail("Not implemented"),
+  getRelevantForPrompt: (_prompt: string) =>
+    Effect.gen(function* () {
+      const repository = yield* BestPracticeRepository;
+      const output = yield* repository.getAll(); //TODO: add smarter logic
+      return output;
+    }).pipe(
+      Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
+    ),
 };
 
 // export const BestPracticeServiceLive: BestPracticeServiceShape = {
@@ -48,11 +58,3 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
 //       return relevantBestPractices;
 //     }),
 // };
-
-const identifyCharacteristics = (prompt: string) =>
-  Effect.fail("Not implemented"); //TODO: call LLM to extract characteristics
-
-const matchBestPractices = (args: {
-  prompt: string;
-  characteristics: string[];
-}) => Effect.fail("Not implemented"); //TODO: RAG
