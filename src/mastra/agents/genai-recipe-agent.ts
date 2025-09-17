@@ -18,6 +18,7 @@ const ollama = createOllama({
 const modelId = "llama3.2";
 const model = ollama.chat(modelId, { simulateStreaming: true });
 
+//TODO: See if recipe tool is even needed, or if agent can figure it out
 export const genAiRecipeAgent = new Agent({
   name: "GenAI Recipe Agent",
   instructions: `
@@ -43,8 +44,15 @@ export const genAiRecipeAgent = new Agent({
   4. Generating an optimized prompt or input that will elicit a desired response
   from the chosen model.
 
-  The output should be a JSON object containing the chosen model and the optimised prompt, that the user can use to generate an image or video that meets the user's
+  Your output should be a JSON object containing the chosen model and the optimised prompt, that the user can use to generate an image or video that meets the user's
   requirements and preferences.
+
+  - When getting best practices, use the exact prompt provided by the user, do not modify it.
+  - Only use information from best practices, do not invent anything.
+  - If you can't get best practices, return an error message, do not try to come up with a recipe yourself.
+  - If the user query doesn't look like a GenAI prompt, return an error message.
+  - The recipe / output should be a JSON object in this exact format: { model: string; optimisedPrompt: string; }.
+  - Only return the output or the error message, nothing else.
 `,
   // model: openai("gpt-4o-mini"),
   model,
