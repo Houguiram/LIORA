@@ -5,6 +5,8 @@ import {
 } from "./best-practice-service";
 import { RecipeService, RecipeServiceMock } from "./recipe-service";
 
+//TODO: Consider an agent rather than a workflow!
+
 // Workflow strategy 1
 // 1. Identify prompt characteristics
 // 2. Find relevant best practices

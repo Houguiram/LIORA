@@ -2,7 +2,12 @@ import { Effect, Context, pipe } from "effect";
 import { BestPractice } from "./best-practice-service";
 
 export interface Recipe {
-  prompt: string; //TODO: Set proper shape for recipe
+  steps: Array<{
+    index: number;
+    dependencies: number[];
+    model: string;
+    optimisedPrompt: string;
+  }>;
 }
 
 interface RecipeServiceShape {
@@ -17,12 +22,23 @@ export class RecipeService extends Context.Tag("RecipeService")<
 >() {}
 
 export const RecipeServiceMock: RecipeServiceShape = {
-  generate: (_args) => Effect.succeed({ prompt: "FAKE" }),
+  generate: (_args) =>
+    Effect.succeed({
+      steps: [
+        {
+          index: 0,
+          dependencies: [],
+          model: "FAKE_MODEL",
+          optimisedPrompt: "FAKE PROMPT",
+        },
+      ],
+    }),
 };
 
 export const RecipeServiceLive: RecipeServiceShape = {
   // TODO
   // 3. Generate a recipe
   // 4. Generate prompts for each step
-  generate: (_args) => Effect.succeed({ prompt: "FAKE" }), //TODO
+  //@ts-ignore -- To be implemented
+  generate: (_args) => Effect.fail("Not implemented"), //TODO
 };

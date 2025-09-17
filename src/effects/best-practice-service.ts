@@ -18,19 +18,24 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
 };
 
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
-  // TODO
-  // 1. Identify prompt characteristics
-  // 2. Find relevant best practices
-  getRelevantForPrompt: (prompt: string) =>
-    Effect.gen(function* () {
-      const promptCharacteristics = yield* identifyCharacteristics(prompt);
-      const relevantBestPractices = yield* matchBestPractices({
-        prompt,
-        characteristics: promptCharacteristics,
-      });
-      return relevantBestPractices;
-    }),
+  //@ts-ignore -- To be implemented
+  getRelevantForPrompt: (_prompt: string) => Effect.fail("Not implemented"),
 };
+
+// export const BestPracticeServiceLive: BestPracticeServiceShape = {
+//   // TODO
+//   // 1. Identify prompt characteristics
+//   // 2. Find relevant best practices
+//   getRelevantForPrompt: (prompt: string) =>
+//     Effect.gen(function* () {
+//       const promptCharacteristics = yield* identifyCharacteristics(prompt);
+//       const relevantBestPractices = yield* matchBestPractices({
+//         prompt,
+//         characteristics: promptCharacteristics,
+//       });
+//       return relevantBestPractices;
+//     }),
+// };
 
 const identifyCharacteristics = (prompt: string) =>
   Effect.fail("Not implemented"); //TODO: call LLM to extract characteristics
