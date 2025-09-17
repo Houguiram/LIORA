@@ -14,7 +14,19 @@ export class BestPracticeService extends Context.Tag("BestPracticeService")<
 >() {}
 
 export const BestPracticeServiceMock: BestPracticeServiceShape = {
-  getRelevantForPrompt: (_prompt: string) => Effect.succeed([]),
+  getRelevantForPrompt: (_prompt: string) =>
+    Effect.succeed([
+      {
+        insight:
+          "Midjourney v7 is the best at all types of images at the moment.",
+        relevantModels: ["midjourney-v7"],
+      },
+      {
+        insight:
+          'Midjourney v7 gives the best results when prompted in a JSON format like { "subject": "tea pot", "lighting": "bright outdoor", ... }',
+        relevantModels: ["midjourney-v7"],
+      },
+    ]),
 };
 
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
