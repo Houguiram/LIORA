@@ -23,6 +23,7 @@
     "@mastra/loggers": "^0.10.11",
     "@mastra/memory": "^0.15.1",
     "effect": "^3.17.13",
+    "@notionhq/client": "^2.2.15",
     "ollama-ai-provider": "^1.2.0",
     "zod": "^3.25.76"
   },

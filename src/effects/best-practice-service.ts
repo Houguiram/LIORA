@@ -1,4 +1,4 @@
-import { Effect, Context, pipe } from "effect";
+import { Effect, Context } from "effect";
 import {
   BestPracticeRepository,
   BestPracticeRepositoryLive,
@@ -9,13 +9,21 @@ export interface BestPractice {
 }
 interface BestPracticeServiceShape {
   readonly getRelevantForPrompt: (
-    prompt: string,
-  ) => Effect.Effect<BestPractice[]>;
+    prompt: string
+  ) => Effect.Effect<BestPractice[], Error>;
 }
 export class BestPracticeService extends Context.Tag("BestPracticeService")<
   BestPracticeService,
   BestPracticeServiceShape
 >() {}
+
+// Type-safe "assume never" for exhaustive checks returning an Effect
+const assumeNeverEffect = <A>(_value: never): Effect.Effect<A, Error> => {
+  const errorMessage = "Unknown error";
+  return Effect.logError(errorMessage).pipe(
+    Effect.andThen(() => Effect.fail(new Error(errorMessage)))
+  );
+};
 
 export const BestPracticeServiceMock: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
@@ -41,20 +49,24 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
       return output;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
+      Effect.catchAll((err) => {
+        switch (err._tag) {
+          case "ConfigurationError": {
+            const errorMessage =
+              "[ConfigurationError] Missing config: " + err.missing.join(", ");
+            return Effect.logError(errorMessage).pipe(
+              Effect.andThen(() => Effect.fail(new Error(errorMessage)))
+            );
+          }
+          case "NotionQueryError": {
+            const errorMessage = "[NotionQueryError] " + err.message;
+            return Effect.logError(errorMessage).pipe(
+              Effect.andThen(() => Effect.fail(new Error(errorMessage)))
+            );
+          }
+          default:
+            return assumeNeverEffect<BestPractice[]>(err);
+        }
+      })
     ),
 };
-
-// export const BestPracticeServiceLive: BestPracticeServiceShape = {
-//   // TODO
-//   // 1. Identify prompt characteristics
-//   // 2. Find relevant best practices
-//   getRelevantForPrompt: (prompt: string) =>
-//     Effect.gen(function* () {
-//       const promptCharacteristics = yield* identifyCharacteristics(prompt);
-//       const relevantBestPractices = yield* matchBestPractices({
-//         prompt,
-//         characteristics: promptCharacteristics,
-//       });
-//       return relevantBestPractices;
-//     }),
-// };
