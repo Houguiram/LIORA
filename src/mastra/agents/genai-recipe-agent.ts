@@ -17,7 +17,6 @@ const onlineModel = openai("gpt-4o-mini");
 
 const model = IS_OFFLINE ? localModel : onlineModel;
 
-//TODO: See if recipe tool is even needed, or if agent can figure it out
 export const genAiRecipeAgent = new Agent({
   name: "GenAI Recipe Agent",
   instructions: `
