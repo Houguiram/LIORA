@@ -18,6 +18,7 @@ const listToolKeys = (tools: Record<string, unknown>) =>
 //TODO: consider using the API to get type safe client for tools -- http://localhost:5555/api_v1.json
 //TODO: keep it simple, coral system prompt should just be "wait for mentions", which should be enough for it to get it
 //TODO: Switching to GPT-5 made it much better at using those tools. Decide wether we keep it or not.
+// Actually, it's still getting confused, replying to itself.
 
 // Build the Coral bridge system prompt (mirrors the Python example steps)
 const buildCoralBridgeSystemPrompt = (
@@ -27,7 +28,7 @@ const buildCoralBridgeSystemPrompt = (
 VERY IMPORTANT:
 
 <important>
-You won't get an actual usage message as input. Instead, use the relevant tool to wait for mentions, and use the relevant tool to reply.
+You won't get an actual usage message as input. Instead, use the relevant tool to wait for mentions, and use the relevant tool to reply. Here are the tools: ${listToolKeys(coralTools)}
 </important>
 `;
 
