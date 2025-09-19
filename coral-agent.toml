@@ -21,6 +21,6 @@ description = "Connection/tool timeouts in ms"
 default = "30000"
 
 [runtimes.executable]
-command = ["bash", "-c", "./run_agent.sh main.ts"]
+command = ["bash", "-c", "./run_agent.sh"]
 
 

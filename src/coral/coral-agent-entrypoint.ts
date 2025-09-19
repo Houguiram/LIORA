@@ -4,8 +4,8 @@ import { MCPClient } from "@mastra/mcp";
 import { openai } from "@ai-sdk/openai";
 import { createOllama } from "ollama-ai-provider";
 
-import { bestPracticeTool } from "./mastra/tools/best-practice-tool";
-import { IS_OFFLINE } from "./utils/offline";
+import { bestPracticeTool } from "../mastra/tools/best-practice-tool";
+import { IS_OFFLINE } from "../utils/offline";
 
 // Utility: simple sleep
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
