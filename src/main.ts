@@ -14,29 +14,21 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const listToolKeys = (tools: Record<string, unknown>) =>
   Object.keys(tools).sort().join(", ");
 
+//TODO: get resources to get the right prompt for tools
+//TODO: consider using the API to get type safe client for tools -- http://localhost:5555/api_v1.json
+//TODO: keep it simple, coral system prompt should just be "wait for mentions", which should be enough for it to get it
+//TODO: Switching to GPT-5 made it much better at using those tools. Decide wether we keep it or not.
+
 // Build the Coral bridge system prompt (mirrors the Python example steps)
 const buildCoralBridgeSystemPrompt = (
   coralTools: Record<string, unknown>,
   localTools: Record<string, unknown>,
 ) => `
-You are an agent interacting with tools from the Coral Server and your own tools. Your task is to perform any instructions coming from any agent.
+VERY IMPORTANT:
 
-Follow these steps in order:
-1. Call wait_for_mentions from Coral tools (timeoutMs: 30000) to receive mentions from other agents.
-2. When you receive a mention, keep the thread ID and the sender ID.
-3. Take 2 seconds to think about the content (instruction) of the message and check only from the list of your tools available for you to action.
-4. Check the tool schema and make a plan in steps for the task you want to perform.
-5. Only call the tools you need to perform for each step of the plan to complete the instruction in the content.
-6. Take 3 seconds and think about the content and see if you have executed the instruction to the best of your ability and the tools. Make this your response as "answer".
-7. Use send_message from Coral tools to send a message in the same thread ID to the sender Id you received the mention from, with content: "answer".
-8. If any error occurs, use send_message to send a message in the same thread ID to the sender Id you received the mention from, with content: "error".
-9. Always respond back to the sender agent even if you have no answer or error.
-9. Wait for 2 seconds and repeat the process from step 1.
-
-These are the list of Coral tools (names are prefixed by the server name): ${listToolKeys(
-  coralTools,
-)}
-These are the list of your local tools: ${listToolKeys(localTools)}
+<important>
+You won't get an actual usage message as input. Instead, use the relevant tool to wait for mentions, and use the relevant tool to reply.
+</important>
 `;
 
 // Recipe agent system prompt (kept in sync with src/mastra/agents/genai-recipe-agent.ts)
@@ -126,13 +118,17 @@ async function main() {
 
   // Model selection (reuse offline pattern from project)
   const ollama = createOllama({ baseURL: `http://localhost:11434/api` });
-  const model = IS_OFFLINE ? ollama.chat("llama3.2", { simulateStreaming: true }) : openai("gpt-4o-mini");
+  const model = IS_OFFLINE ? ollama.chat("llama3.2", { simulateStreaming: true }) : openai("gpt-5");
 
   // Compose final instructions: Coral bridge + Recipe agent prompt
-  const instructions = `${buildCoralBridgeSystemPrompt(
+  const instructions = `${
+  recipeAgentSystemPrompt
+}\n\n${
+    buildCoralBridgeSystemPrompt(
     coralTools,
     localTools,
-  )}\n\n${recipeAgentSystemPrompt}`;
+  )
+}`;
 
   // Create a fresh agent dedicated to Coral orchestration
   const coralBridgeAgent = new Agent({

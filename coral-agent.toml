@@ -1,6 +1,7 @@
 [agent]
 name = "genai-recipe-agent"
 version = "0.0.1"
+description = "An agent that can pick models and craft optimised prompts for GenAI based on best practices"
 
 [options.OPENAI_API_KEY]
 type = "string"
@@ -17,7 +18,7 @@ description = "Notion database ID for Best Practices"
 [options.TIMEOUT_MS]
 type = "string"
 description = "Connection/tool timeouts in ms"
-default = "300"
+default = "30000"
 
 [runtimes.executable]
 command = ["bash", "-c", "./run_agent.sh main.ts"]
