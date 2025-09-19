@@ -5,16 +5,17 @@ import type {
   QueryDatabaseParameters,
   QueryDatabaseResponse,
 } from "@notionhq/client/build/src/api-endpoints";
-import { Effect, Context, Data } from "effect";
+import { Effect, Context } from "effect";
+import { TaggedError } from "effect/Data";
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
 }
-class ConfigurationError extends Data.TaggedError("ConfigurationError")<{
+class ConfigurationError extends TaggedError("ConfigurationError")<{
   missing: string[];
 }> {}
 
-class NotionQueryError extends Data.TaggedError("NotionQueryError")<{
+class NotionQueryError extends TaggedError("NotionQueryError")<{
   message: string;
 }> {}
 
@@ -60,7 +61,7 @@ const ensureConfiguration: Effect.Effect<void, ConfigurationError> = Effect.gen(
     }
     if (missingConfigurations.length > 0) {
       return yield* Effect.fail(
-        new ConfigurationError({ missing: missingConfigurations }),
+        new ConfigurationError({ missing: missingConfigurations })
       );
     }
   },
@@ -83,7 +84,7 @@ const queryDatabase = (
           }),
         catch: (error) =>
           new NotionQueryError({
-            message: `Failed to query Notion database: ${getErrorMessage(error)}`,
+            message: `Failed to query Notion database: ${getErrorMessage(error)}`
           }),
       });
 
