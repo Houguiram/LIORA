@@ -70,7 +70,7 @@ requirements and preferences.
 async function main() {
   // Read environment configuration (mirrors python example semantics)
   const baseUrl = process.env.CORAL_SSE_URL;
-  const agentId = process.env.CORAL_AGENT_ID || "local-mastra-agent";
+  const agentId = process.env.CORAL_AGENT_ID || "genai-expert-agent";
   const timeoutMs = Number(process.env.TIMEOUT_MS || "300");
 
   if (!baseUrl) {

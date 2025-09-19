@@ -1,5 +1,5 @@
 {
-  "name": "local-mastra",
+  "name": "genai-expert-agent",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -22,8 +22,8 @@
     "@mastra/libsql": "^0.14.1",
     "@mastra/loggers": "^0.10.11",
     "@mastra/memory": "^0.15.1",
-    "effect": "^3.17.13",
     "@notionhq/client": "^2.2.15",
+    "effect": "^3.17.13",
     "ollama-ai-provider": "^1.2.0",
     "zod": "^3.25.76"
   },
