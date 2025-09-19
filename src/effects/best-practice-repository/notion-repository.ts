@@ -5,12 +5,10 @@ import type {
   QueryDatabaseParameters,
   QueryDatabaseResponse,
 } from "@notionhq/client/build/src/api-endpoints";
-import { Effect, Context } from "effect";
+import { Effect } from "effect";
 import { TaggedError } from "effect/Data";
-export interface BestPractice {
-  insight: string;
-  relevantModels: string[];
-}
+import { BestPractice, BestPracticeRepositoryShape } from "./best-practice-repository";
+
 class ConfigurationError extends TaggedError("ConfigurationError")<{
   missing: string[];
 }> {}
@@ -19,32 +17,16 @@ class NotionQueryError extends TaggedError("NotionQueryError")<{
   message: string;
 }> {}
 
-type BestPracticeRepositoryError = ConfigurationError | NotionQueryError;
-
-interface BestPracticeRepositoryShape {
-  readonly getAll: () => Effect.Effect<BestPractice[], BestPracticeRepositoryError>;
-  readonly search: (query: string) => Effect.Effect<BestPractice[], BestPracticeRepositoryError>;
-}
-export class BestPracticeRepository extends Context.Tag(
-  "BestPracticeRepository",
-)<BestPracticeRepository, BestPracticeRepositoryShape>() {}
-
-export const BestPracticeRepositoryMock: BestPracticeRepositoryShape = {
-  getAll: () => Effect.succeed(mockValues),
-  search: (_query) => Effect.succeed(mockValues),
-};
-
 const NOTION_API_TOKEN =
-  process.env.NOTION_API_TOKEN ?? "TODO_NOTION_API_TOKEN"; // TODO: set NOTION_API_TOKEN env var with your Notion integration token
+  process.env.NOTION_API_TOKEN ?? "TODO_NOTION_API_TOKEN"; 
 const BEST_PRACTICES_DATABASE_ID =
-  process.env.NOTION_BEST_PRACTICES_DB_ID ?? "TODO_DATABASE_ID"; // TODO: set NOTION_BEST_PRACTICES_DB_ID env var with your Notion database ID
+  process.env.NOTION_BEST_PRACTICES_DB_ID ?? "TODO_DATABASE_ID";
 
-const INSIGHT_PROPERTY_NAME = "Insight"; // TODO: adjust if your Notion property name differs
-const RELEVANT_MODELS_PROPERTY_NAME = "Relevant Models"; // TODO: adjust if your Notion property name differs
+const INSIGHT_PROPERTY_NAME = "Insight 1";
+const RELEVANT_MODELS_PROPERTY_NAME = "Model";
 
 const notionClient = new Client({
   auth: NOTION_API_TOKEN,
-  notionVersion: "2025-09-03",
 });
 
 const ensureConfiguration: Effect.Effect<void, ConfigurationError> = Effect.gen(
@@ -65,6 +47,8 @@ const ensureConfiguration: Effect.Effect<void, ConfigurationError> = Effect.gen(
       );
     }
   },
+).pipe(
+  Effect.tap(() => Effect.log("Ensured valid Notion configuration")),
 );
 
 const queryDatabase = (
@@ -98,36 +82,68 @@ const queryDatabase = (
     } while (cursor);
 
     return pages;
-  });
+  }).pipe(
+    Effect.tap((pages) => Effect.log(`Queried Notion database and got ${pages.length} pages`).pipe(
+      Effect.andThen(() => Effect.log(`Page example: ${JSON.stringify(pages[0], null, 2)}`)),
+    )),
+  );
 
 const mapToBestPractice = (
   page: PageObjectResponse | PartialPageObjectResponse,
 ): BestPractice | null => {
   if (!isFullPage(page)) {
+    console.error("Page is not full");
     return null;
   }
 
   const insightProperty = page.properties[INSIGHT_PROPERTY_NAME];
-  if (!insightProperty || insightProperty.type !== "rich_text") {
+  if (!insightProperty) {
+    console.error("Insight property is not found");
+    return null;
+  }
+  // Support both Notion property types: "title" and "rich_text"
+  let insightTextItems: Array<{ plain_text: string }> | undefined;
+  if (insightProperty.type === "rich_text") {
+    insightTextItems = insightProperty.rich_text as Array<{ plain_text: string }>;
+  } else if (insightProperty.type === "title") {
+    insightTextItems = insightProperty.title as Array<{ plain_text: string }>;
+  } else {
+    console.error(
+      `Insight property must be of type "title" or "rich_text" (got ${insightProperty.type})`,
+    );
     return null;
   }
 
   const relevantModelsProperty =
     page.properties[RELEVANT_MODELS_PROPERTY_NAME];
 
-  const insight = insightProperty.rich_text
+  const insight = (insightTextItems ?? [])
     .map((item: { plain_text: string }) => item.plain_text)
     .join(" ")
     .trim();
 
   if (!insight) {
+    console.error("Insight is empty");
     return null;
   }
 
-  const relevantModels =
-    relevantModelsProperty && relevantModelsProperty.type === "multi_select"
-      ? relevantModelsProperty.multi_select.map((option: { name: string }) => option.name)
-      : [];
+  let relevantModels: string[] = [];
+  if (relevantModelsProperty) {
+    if (relevantModelsProperty.type === "multi_select") {
+      relevantModels = relevantModelsProperty.multi_select.map((option: { name: string }) => option.name);
+    } else if (relevantModelsProperty.type === "rich_text") {
+      const concatenated = (relevantModelsProperty.rich_text as Array<{ plain_text: string }> | undefined)
+        ?.map((item) => item.plain_text)
+        .join(" ")
+        .trim();
+      if (concatenated) {
+        relevantModels = concatenated
+          .split(/[;,\n]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+  }
 
   return {
     insight,
@@ -146,16 +162,16 @@ const buildSearchFilter = (query: string): QueryDatabaseParameters["filter"] => 
   or: [
     {
       property: INSIGHT_PROPERTY_NAME,
-      rich_text: { contains: query },
+      title: { contains: query },
     },
     {
       property: RELEVANT_MODELS_PROPERTY_NAME,
-      multi_select: { contains: query },
+      rich_text: { contains: query },
     },
   ],
 });
 
-export const BestPracticeRepositoryLive: BestPracticeRepositoryShape = {
+export const NotionBestPracticeRepository: BestPracticeRepositoryShape = {
   getAll: () =>
     Effect.gen(function* () {
       yield* ensureConfiguration;
@@ -169,7 +185,7 @@ export const BestPracticeRepositoryLive: BestPracticeRepositoryShape = {
       yield* ensureConfiguration;
       const trimmedQuery = query.trim();
       if (!trimmedQuery) {
-        return yield* BestPracticeRepositoryLive.getAll();
+        return yield* NotionBestPracticeRepository.getAll();
       }
 
       const pages = yield* queryDatabase(buildSearchFilter(trimmedQuery));
@@ -179,14 +195,3 @@ export const BestPracticeRepositoryLive: BestPracticeRepositoryShape = {
     }),
 };
 
-const mockValues: BestPractice[] = [
-  {
-    insight: "Midjourney v7 is the best at all types of images at the moment.",
-    relevantModels: ["midjourney-v7"],
-  },
-  {
-    insight:
-      'Midjourney v7 gives the best results when prompted in a JSON format like { "subject": "tea pot", "lighting": "bright outdoor", ... }',
-    relevantModels: ["midjourney-v7"],
-  },
-];

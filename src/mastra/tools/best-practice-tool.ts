@@ -24,10 +24,10 @@ export const bestPracticeTool = createTool({
     ),
   }),
   execute: async ({ context }) => {
-    const _service = IS_OFFLINE
+    const service = IS_OFFLINE
       ? BestPracticeServiceMock
       : BestPracticeServiceLive;
-    const service = BestPracticeServiceMock;
+    const _service = BestPracticeServiceMock;
 
     const program = getBestPracticeRunnable(context.prompt).pipe(
       Effect.tap((output) =>

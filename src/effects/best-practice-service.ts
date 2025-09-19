@@ -2,7 +2,7 @@ import { Effect, Context } from "effect";
 import {
   BestPracticeRepository,
   BestPracticeRepositoryLive,
-} from "./best-practice-repository";
+} from "./best-practice-repository/best-practice-repository";
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
