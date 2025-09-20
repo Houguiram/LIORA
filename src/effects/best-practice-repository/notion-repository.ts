@@ -26,6 +26,7 @@ const BEST_PRACTICES_DATABASE_ID =
 const INSIGHT_PROPERTY_NAME = "Insight 1";
 const RELEVANT_MODELS_PROPERTY_NAME = "Model";
 const OUTPUT_TYPE_PROPERTY_NAME = "Output type";
+const MULTISTEP_PROPERTY_NAME = "Multistep";
 
 const notionClient = new Client({
   auth: NOTION_API_TOKEN,
@@ -119,6 +120,7 @@ const mapToBestPractice = (
   const relevantModelsProperty =
     page.properties[RELEVANT_MODELS_PROPERTY_NAME];
   const outputTypeProperty = page.properties[OUTPUT_TYPE_PROPERTY_NAME];
+  const multistepProperty = page.properties[MULTISTEP_PROPERTY_NAME];
 
   const insight = (insightTextItems ?? [])
     .map((item: { plain_text: string }) => item.plain_text)
@@ -169,10 +171,33 @@ const mapToBestPractice = (
     }
   }
 
+  // Determine multistep value; prefer Notion checkbox, fall back to text/select
+  let multistep = false;
+  if (multistepProperty) {
+    if (multistepProperty.type === "checkbox") {
+      multistep = Boolean((multistepProperty as any).checkbox);
+    } else if (multistepProperty.type === "rich_text") {
+      const text = (multistepProperty.rich_text as Array<{ plain_text: string }> | undefined)
+        ?.map((item) => item.plain_text)
+        .join(" ")
+        .trim()
+        .toLowerCase();
+      if (text) {
+        multistep = text === "true" || text === "yes" || text === "1";
+      }
+    } else if (multistepProperty.type === "select") {
+      const name = (multistepProperty as any).select?.name?.toLowerCase?.();
+      if (name) {
+        multistep = name === "true" || name === "yes" || name === "1";
+      }
+    }
+  }
+
   return {
     insight,
     relevantModels,
     outputType,
+    multistep,
   };
 };
 

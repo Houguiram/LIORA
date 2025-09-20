@@ -11,10 +11,6 @@ export const genaiExecutionTool = createTool({
   inputSchema: z.object({
     model: z.string().describe("Generic model name, e.g. 'nano banana' or 'flux dev'"),
     prompt: z.string().describe("User prompt for generation"),
-    input: z
-      .record(z.string(), z.any())
-      .optional()
-      .describe("Extra input fields specific to the model, merged with prompt"),
   }),
   outputSchema: z.object({
     error: z.string().optional(),
@@ -23,8 +19,9 @@ export const genaiExecutionTool = createTool({
     resolvedModel: z.string().optional(),
   }),
   execute: async ({ context }) => {
+    console.log("genai execution tool", context);
     const falServiceImpl = IS_OFFLINE ? FalServiceMock : FalServiceLive;
-    const program = generateRunnable(context.model, context.prompt, context.input)
+    const program = generateRunnable(context.model, context.prompt)
       .pipe(
         Effect.tap((output) =>
           Effect.log(
@@ -41,13 +38,12 @@ export const genaiExecutionTool = createTool({
 const generateRunnable = (
   model: string,
   prompt: string,
-  extra?: Record<string, unknown>,
 ) =>
   Effect.gen(function* () {
     const service = yield* GenAiService;
     const resolvedModel = resolveFalEndpoint(model);
     const response = yield* service
-      .generate(model, prompt, extra)
+      .generate(model, prompt)
       .pipe(Effect.catchAll((err) => Effect.succeed({ error: err.message, resolvedModel })));
     const isError = "error" in (response as any);
     if (isError) {

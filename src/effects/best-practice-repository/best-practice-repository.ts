@@ -8,6 +8,7 @@ export interface BestPractice {
   insight: string;
   relevantModels: string[];
   outputType: OutputType[];
+  multistep: boolean;
 }
 class ConfigurationError extends TaggedError("ConfigurationError")<{
   missing: string[];
@@ -36,12 +37,14 @@ const mockValues: BestPractice[] = [
     insight: "Midjourney v7 is the best at all types of images at the moment.",
     relevantModels: ["midjourney-v7"],
     outputType: ["image"],
+    multistep: false,
   },
   {
     insight:
       'Midjourney v7 gives the best results when prompted in a JSON format like { "subject": "tea pot", "lighting": "bright outdoor", ... }',
     relevantModels: ["midjourney-v7"],
     outputType: ["image"],
+    multistep: false,
   },
 ];
 

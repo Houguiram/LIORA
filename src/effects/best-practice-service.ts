@@ -41,12 +41,32 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
     ]),
 };
 
+const VALID_MODELS = [
+  "Ideogram",
+  "Kling",
+  "Imagen Nano Banana",
+  "Veo3",
+  "Seedream",
+];
+
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
     Effect.gen(function* () {
       const repository = yield* BestPracticeRepository;
       const output = yield* repository.getAll(); //TODO: add smarter logic
-      return output;
+      const filteredOutput = output
+        .filter(
+          (bp) =>
+            bp.relevantModels.length === 0 ||
+            VALID_MODELS.includes(bp.relevantModels[0])
+        )
+        .filter(
+          (bp) =>
+            !bp.insight.toLowerCase().includes("runway") &&
+            !bp.insight.toLowerCase().includes("midjourney")
+        )
+        .filter((bp) => !bp.multistep);
+      return filteredOutput;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
       Effect.catchAll((err) => {

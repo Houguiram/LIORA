@@ -5,7 +5,6 @@ export interface GenAiServiceShape {
   readonly generate: (
     modelName: string,
     prompt: string,
-    extraInput?: Record<string, unknown>,
   ) => Effect.Effect<{
     requestId: string;
     data: unknown;
@@ -84,11 +83,11 @@ export const resolveFalEndpoint = (modelName: string): string => {
 };
 
 export const GenAiServiceLive: GenAiServiceShape = {
-  generate: (modelName, prompt, extraInput) =>
+  generate: (modelName, prompt) =>
     Effect.gen(function* () {
       const fal = yield* FalService;
       const endpoint = resolveFalEndpoint(modelName);
-      const result = yield* fal.generate(endpoint, prompt, extraInput);
+      const result = yield* fal.generate(endpoint, prompt);
       return result;
     }),
 };
