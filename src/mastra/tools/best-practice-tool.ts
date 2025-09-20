@@ -32,7 +32,7 @@ export const bestPracticeTool = createTool({
     const program = getBestPracticeRunnable(context.prompt).pipe(
       Effect.tap((output) =>
         Effect.log(
-          `Got best practices: { prompt: "${context.prompt}", bestPractices: "${JSON.stringify(output, null, 2)}"`
+          `Got best practices for prompt "${context.prompt}"`
         )
       ),
       Effect.provideService(BestPracticeService, service)
