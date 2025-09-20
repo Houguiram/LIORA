@@ -34,27 +34,38 @@ You won't get an actual usage message as input. Instead, use the relevant tool t
 `;
 
 // Recipe agent system prompt (kept in sync with src/mastra/agents/genai-recipe-agent.ts)
-const agentSystemPrompt = `
-  You generate images or videos end-to-end using the provided tools. Your purpose is to return an actual generated asset, not a recipe.
+const recipeAgentSystemPrompt = `
+You are an expert at picking the right tool for the job to generate images and videos using AI.
 
-  Process:
-  1. Validate the user's prompt is a GenAI generation request for an image or a video. If not, return an error message.
-  2. Call the best practice tool with the exact user prompt (do not modify it).
-  3. From best practices, identify the desired output type and candidate models. Ignore practices not relevant to the requested type.
-  4. Select the best model based on quality, style fit, and constraints (latency/compute).
-  5. If best practices include prompting techniques for that model, optimize the user's prompt accordingly; otherwise use the original prompt unchanged.
-  6. Call the GenAI execution tool with { model, prompt } to generate the asset.
-  7. Extract a public URL to the generated asset from the tool response. If multiple URLs exist, choose the primary URL that matches the requested type.
+Users will provide you with their prompt, which is what they are trying to generate.
+Your goal is to pick the right model and produce an optimised prompt for it to
+generate high-quality images and videos using AI
+models that can produce realistic, engaging, and relevant visual content.
 
-  Output format (return only this JSON, nothing else):
-  { url: string; model: string; prompt: string; explanation: string }
+- Identify the best AI model for generating visual content based on the
+characteristics of the desired output (e.g. realism, style, complexity).
+- Optimize the input to the chosen model to achieve the desired output quality.
+- Consider the strengths and limitations of different AI models, including their
+requirements for data, processing time, and computational resources.
 
-  Rules:
-  - When calling best practices, use the exact user prompt.
-  - Only use information found in best practices; do not invent techniques.
-  - Ignore best practices that are not relevant to the requested output type.
-  - If best practices cannot be retrieved or are empty, return an error message.
-  - If tool execution fails or no output URL is found, return an error message.
+The process should involve:
+1. Understanding the user's prompt and requirements.
+2. Retrieving relevant information about the best performing models for
+generating visual content (e.g. characteristics, strengths, limitations).
+3. Identifying the optimal model and input parameters for achieving high-quality
+output.
+4. Generating an optimized prompt or input that will elicit a desired response
+from the chosen model.
+
+Your output should be a JSON object containing the chosen model and the optimised prompt, that the user can use to generate an image or video that meets the user's
+requirements and preferences.
+
+- When getting best practices, use the exact prompt provided by the user, do not modify it.
+- Only use information from best practices, do not invent anything.
+- If you can't get best practices, return an error message, do not try to come up with a recipe yourself.
+- If the user query doesn't look like a GenAI prompt, return an error message.
+- The recipe / output should be a JSON object in this exact format: { model: string; optimisedPrompt: string; }.
+- Only return the output or the error message, nothing else.
 `;
 
 async function main() {
@@ -70,7 +81,7 @@ async function main() {
   }
 
   const agentDescription =
-    "An agent that can generate images or videos using the best models and prompts at any time";
+    "An agent that can pick models and craft optimised prompts for GenAI based on best practices";
 
   // Build Coral SSE URL with required query params
   const coralUrl = new URL(baseUrl);
@@ -113,7 +124,7 @@ async function main() {
 
   // Compose final instructions: Coral bridge + Recipe agent prompt
   const instructions = `${
-  agentSystemPrompt
+  recipeAgentSystemPrompt
 }\n\n${
     buildCoralBridgeSystemPrompt(
     coralTools,
