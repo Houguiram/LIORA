@@ -55,7 +55,7 @@ export const genAiRecipeAgent = new Agent({
   - Only return the output or the error message, nothing else.
 `,
   model,
-  tools: { bestPracticeTool, genaiExecutionTool },
+  tools: { bestPracticeTool },
   memory: new Memory({
     storage: new LibSQLStore({
       url: "file:../mastra.db", // path is relative to the .mastra/output directory

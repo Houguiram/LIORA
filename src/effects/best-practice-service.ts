@@ -53,7 +53,7 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
     Effect.gen(function* () {
       const repository = yield* BestPracticeRepository;
-      const output = yield* repository.getAll(); //TODO: add smarter logic
+      const output = yield* repository.getAll(); //TODO: add smarter logic e.g. RAG retrieval or search
       const filteredOutput = output
         .filter(
           (bp) =>
