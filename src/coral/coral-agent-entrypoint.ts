@@ -17,9 +17,6 @@ const listToolKeys = (tools: Record<string, unknown>) =>
 
 //TODO: get resources to get the right prompt for tools
 //TODO: consider using the API to get type safe client for tools -- http://localhost:5555/api_v1.json
-//TODO: keep it simple, coral system prompt should just be "wait for mentions", which should be enough for it to get it
-//TODO: Switching to GPT-5 made it much better at using those tools. Decide wether we keep it or not.
-// Actually, it's still getting confused, replying to itself.
 
 // Build the Coral bridge system prompt (mirrors the Python example steps)
 const buildCoralBridgeSystemPrompt = (
@@ -139,7 +136,7 @@ async function main() {
   while (true) {
     try {
       console.log("Starting new agent invocation");
-      await coralBridgeAgent.generate("");
+      await coralBridgeAgent.generate(""); //TODO: stream output to console
       console.log("Completed agent invocation, restarting loop");
       await sleep(1000);
     } catch (err) {
