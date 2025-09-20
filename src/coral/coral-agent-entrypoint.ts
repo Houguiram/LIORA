@@ -70,7 +70,7 @@ async function main() {
   }
 
   const agentDescription =
-    "An agent that can generate images or videos using the best models and prompts at any time";
+    "An agent that can generate images or videos, automatically picking the best models and prompts at any time";
 
   // Build Coral SSE URL with required query params
   const coralUrl = new URL(baseUrl);

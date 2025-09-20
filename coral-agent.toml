@@ -1,11 +1,11 @@
 [agent]
 name = "genai-recipe-agent"
 version = "0.0.1"
-description = "An agent that can pick models and craft optimised prompts for GenAI based on best practices"
+description = "An agent that can generate images or videos, automatically picking the best models and prompts at any time"
 
 [options.OPENAI_API_KEY]
 type = "string"
-description = "API key for OpenAI (used by the agent when online)"
+description = "API key for OpenAI"
 
 [options.NOTION_API_TOKEN]
 type = "string"
