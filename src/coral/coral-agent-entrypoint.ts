@@ -59,7 +59,7 @@ async function main() {
   // Read environment configuration (mirrors python example semantics)
   const baseUrl = process.env.CORAL_SSE_URL;
   const agentId = process.env.CORAL_AGENT_ID || "genai-expert-agent";
-  const timeoutMs = Number(process.env.TIMEOUT_MS || "300");
+  const timeoutMs = Number(process.env.TIMEOUT_MS || "30000");
 
   if (!baseUrl) {
     throw new Error(
@@ -109,38 +109,153 @@ async function main() {
   const ollama = createOllama({ baseURL: `http://localhost:11434/api` });
   const model = IS_OFFLINE ? ollama.chat("llama3.2", { simulateStreaming: true }) : openai("gpt-5");
 
-  // Compose final instructions: Coral bridge + Recipe agent prompt
-  const instructions = `${
-  agentSystemPrompt
-}\n\n${
-    buildCoralBridgeSystemPrompt(
-    coralTools,
-    localTools,
-  )
-}`;
-
-  // Create a fresh agent dedicated to Coral orchestration
-  const coralBridgeAgent = new Agent({
-    name: "Coral Mastra Bridge",
-    instructions,
+  // Create an agent that ONLY has local tools; we'll call Coral tools manually
+  const localExecutionAgent = new Agent({
+    name: "GenAI Execution Agent",
+    instructions: agentSystemPrompt,
     model,
-    tools: { ...coralTools, ...localTools },
+    tools: { ...localTools },
   });
 
-  console.log("Multi Server Connection Established. Starting loop...");
+  // Helper: robustly find a tool by fuzzy name
+  const findTool = (
+    tools: Record<string, any>,
+    candidates: string[],
+  ) => {
+    const keys = Object.keys(tools);
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    for (const cand of candidates) {
+      const n = norm(cand);
+      const key = keys.find((k) => norm(k).includes(n));
+      if (key) return { key, tool: (tools as any)[key] };
+    }
+    return undefined;
+  };
 
-  // Run loop: the agent itself will call wait_for_mentions/send_message
-  // via MCP tools exposed from Coral
-  // Note: We issue an empty user message; the plan is encoded in instructions
-  // exactly like the Python example that simply invokes the agent.
+  // Helper: invoke a tool across common call shapes
+  const invokeTool = async (tool: any, input: any) => {
+    // 1) direct function
+    if (typeof tool === "function") {
+      return await tool(input);
+    }
+    // 2) createTool shape
+    if (tool && typeof tool.execute === "function") {
+      return await tool.execute({ context: input });
+    }
+    // 3) alternative call shapes
+    if (tool && typeof tool.call === "function") {
+      return await tool.call(input);
+    }
+    if (tool && typeof tool.invoke === "function") {
+      return await tool.invoke(input);
+    }
+    throw new Error("Unsupported tool shape for invocation");
+  };
+
+  // Helper: safely extract thread/sender/content from mention payloads
+  const extractMention = (m: any) => {
+    const threadId =
+      m?.threadId ?? m?.thread_id ?? m?.thread ?? m?.data?.threadId ?? m?.data?.thread_id;
+    const senderId =
+      m?.senderId ?? m?.sender_id ?? m?.sender ?? m?.from ?? m?.data?.senderId ?? m?.data?.sender_id;
+    const content =
+      m?.content ?? m?.message ?? m?.text ?? m?.data?.content ?? m?.data?.message ?? m?.data?.text;
+    return { threadId, senderId, content } as {
+      threadId?: string;
+      senderId?: string;
+      content?: string;
+    };
+  };
+
+  // Resolve Coral tools we need
+  const waitToolEntry = findTool(coralTools as any, [
+    "wait_for_mentions",
+    "wait-for-mentions",
+    "waitForMentions",
+  ]);
+  const sendToolEntry = findTool(coralTools as any, [
+    "send_message",
+    "send-message",
+    "sendMessage",
+  ]);
+
+  if (!waitToolEntry || !sendToolEntry) {
+    console.error(
+      "Required Coral tools not found.",
+      "Available:",
+      listToolKeys(coralTools),
+    );
+    return;
+  }
+
+  console.log(
+    `Resolved Coral tools: wait='${waitToolEntry.key}', send='${sendToolEntry.key}'`,
+  );
+
+  console.log("Connection established. Starting manual loop...");
+
   while (true) {
     try {
-      console.log("Starting new agent invocation");
-      await coralBridgeAgent.generate(""); //TODO: stream output to console
-      console.log("Completed agent invocation, restarting loop");
-      await sleep(1000);
+      // 1) Block for mentions
+      const mentionResult = await invokeTool(waitToolEntry.tool, { timeoutMs: 30000 });
+      const mentions = Array.isArray(mentionResult)
+        ? mentionResult
+        : mentionResult
+          ? [mentionResult]
+          : [];
+
+      if (mentions.length === 0) {
+        await sleep(100);
+        continue;
+      }
+
+      for (const m of mentions) {
+        const { threadId, senderId, content } = extractMention(m);
+        if (!threadId || !senderId) {
+          console.warn("Received mention without routing identifiers:", m);
+          continue;
+        }
+
+        let answer = "";
+        try {
+          const generated = await localExecutionAgent.generate(
+            typeof content === "string" ? content : JSON.stringify(content ?? {}),
+          );
+          // Agent.generate returns a string; if not, stringify
+          answer = typeof generated === "string" ? generated : JSON.stringify(generated);
+        } catch (e) {
+          console.error("Error generating response from local agent:", e);
+          answer = `error: ${(e as Error).message}`;
+        }
+
+        // 2) Try to send response back with schema fallbacks
+        const payloads = [
+          { threadId, recipientId: senderId, content: answer },
+          { thread_id: threadId, recipient_id: senderId, content: answer },
+          { threadId, to: senderId, content: answer },
+        ];
+
+        let sent = false;
+        for (const p of payloads) {
+          try {
+            await invokeTool(sendToolEntry.tool, p);
+            sent = true;
+            break;
+          } catch (e) {
+            // try next shape
+          }
+        }
+        if (!sent) {
+          console.error("Failed to send message with all payload shapes", {
+            threadId,
+            senderId,
+          });
+        }
+      }
+
+      await sleep(2000);
     } catch (err) {
-      console.error("Error in agent loop:", err);
+      console.error("Error in manual loop:", err);
       await sleep(5000);
     }
   }
