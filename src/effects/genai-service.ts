@@ -1,0 +1,100 @@
+import { Effect, Context } from "effect";
+import { FalService } from "./fal-service";
+
+export interface GenAiServiceShape {
+  readonly generate: (
+    modelName: string,
+    prompt: string,
+    extraInput?: Record<string, unknown>,
+  ) => Effect.Effect<{
+    requestId: string;
+    data: unknown;
+  }, Error, FalService>;
+}
+
+export class GenAiService extends Context.Tag("GenAiService")<
+  GenAiService,
+  GenAiServiceShape
+>() {}
+
+export const DEFAULT_FAL_ENDPOINT = "fal-ai/flux/dev";
+
+// Curated list of known fal.ai generation endpoints.
+// Expand this list as new endpoints are needed.
+const VALID_FAL_ENDPOINTS = [
+  "fal-ai/flux/dev",
+  "fal-ai/flux/schnell",
+  "fal-ai/flux-pro",
+  "fal-ai/flux-realism",
+  "fal-ai/llama-3.2-vision",
+  "fal-ai/nano-banana",
+  "fal-ai/black-forest-labs/flux/dev",
+  "fal-ai/black-forest-labs/flux/schnell",
+] as const;
+
+const normalize = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/fal-ai\//g, " ")
+    .replace(/[\/_]+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, "-");
+
+const levenshtein = (a: string, b: string): number => {
+  const dp = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return dp[a.length][b.length];
+};
+
+const tokenOverlap = (a: string, b: string): number => {
+  const ta = new Set(a.split("-"));
+  const tb = new Set(b.split("-"));
+  let overlap = 0;
+  ta.forEach((t) => {
+    if (tb.has(t)) overlap++;
+  });
+  return overlap;
+};
+
+export const resolveFalEndpoint = (modelName: string): string => {
+  const input = normalize(modelName);
+  let best = DEFAULT_FAL_ENDPOINT;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const endpoint of VALID_FAL_ENDPOINTS) {
+    const candidate = normalize(endpoint);
+    const distance = levenshtein(input, candidate);
+    const overlap = tokenOverlap(input, candidate);
+    const score = overlap * 10 - distance; // favor token matches strongly
+    if (score > bestScore) {
+      bestScore = score;
+      best = endpoint;
+    }
+  }
+
+  return best;
+};
+
+export const GenAiServiceLive: GenAiServiceShape = {
+  generate: (modelName, prompt, extraInput) =>
+    Effect.gen(function* () {
+      const fal = yield* FalService;
+      const endpoint = resolveFalEndpoint(modelName);
+      const result = yield* fal.generate(endpoint, prompt, extraInput);
+      return result;
+    }),
+};
+
+

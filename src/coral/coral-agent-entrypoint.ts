@@ -5,7 +5,7 @@ import { openai } from "@ai-sdk/openai";
 import { createOllama } from "ollama-ai-provider";
 
 import { bestPracticeTool } from "../mastra/tools/best-practice-tool";
-import { falGenerationTool } from "../mastra/tools/fal-generation-tool";
+import { genaiExecutionTool } from "../mastra/tools/genai-execution-tool";
 import { IS_OFFLINE } from "../utils/offline";
 
 // Utility: simple sleep
@@ -110,7 +110,7 @@ async function main() {
   );
 
   // Local tools (Mastra)
-  const localTools = { bestPracticeTool, falGenerationTool } as const;
+  const localTools = { bestPracticeTool, genaiExecutionTool } as const;
   console.log(
     `Local tools: ${listToolKeys(localTools)} | Total tools: ${Object.keys({
       ...coralTools,

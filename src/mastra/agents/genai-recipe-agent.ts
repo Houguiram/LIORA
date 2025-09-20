@@ -5,7 +5,7 @@ import { LibSQLStore } from "@mastra/libsql";
 
 import { createOllama } from "ollama-ai-provider";
 import { bestPracticeTool } from "../tools/best-practice-tool";
-import { falGenerationTool } from "../tools/fal-generation-tool";
+import { genaiExecutionTool } from "../tools/genai-execution-tool";
 import { IS_OFFLINE } from "../../utils/offline";
 
 const OLLAMA_HOST = "localhost";
@@ -55,7 +55,7 @@ export const genAiRecipeAgent = new Agent({
   - Only return the output or the error message, nothing else.
 `,
   model,
-  tools: { bestPracticeTool, falGenerationTool },
+  tools: { bestPracticeTool, genaiExecutionTool },
   memory: new Memory({
     storage: new LibSQLStore({
       url: "file:../mastra.db", // path is relative to the .mastra/output directory
