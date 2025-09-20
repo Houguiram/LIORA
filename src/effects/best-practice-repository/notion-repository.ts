@@ -8,6 +8,7 @@ import type {
 import { Effect } from "effect";
 import { TaggedError } from "effect/Data";
 import { BestPractice, BestPracticeRepositoryShape } from "./best-practice-repository";
+import type { OutputType } from "./best-practice-repository";
 
 class ConfigurationError extends TaggedError("ConfigurationError")<{
   missing: string[];
@@ -24,6 +25,7 @@ const BEST_PRACTICES_DATABASE_ID =
 
 const INSIGHT_PROPERTY_NAME = "Insight 1";
 const RELEVANT_MODELS_PROPERTY_NAME = "Model";
+const OUTPUT_TYPE_PROPERTY_NAME = "Output type";
 
 const notionClient = new Client({
   auth: NOTION_API_TOKEN,
@@ -116,6 +118,7 @@ const mapToBestPractice = (
 
   const relevantModelsProperty =
     page.properties[RELEVANT_MODELS_PROPERTY_NAME];
+  const outputTypeProperty = page.properties[OUTPUT_TYPE_PROPERTY_NAME];
 
   const insight = (insightTextItems ?? [])
     .map((item: { plain_text: string }) => item.plain_text)
@@ -145,9 +148,31 @@ const mapToBestPractice = (
     }
   }
 
+  let outputType: OutputType[] = [];
+  if (outputTypeProperty) {
+    if (outputTypeProperty.type === "multi_select") {
+      const values = outputTypeProperty.multi_select
+        .map((option: { name: string }) => option.name.toLowerCase().trim());
+      outputType = values.filter((v): v is OutputType => v === "image" || v === "video" || v === "voice");
+    } else if (outputTypeProperty.type === "rich_text") {
+      const concatenated = (outputTypeProperty.rich_text as Array<{ plain_text: string }> | undefined)
+        ?.map((item) => item.plain_text)
+        .join(" ")
+        .trim();
+      if (concatenated) {
+        const values = concatenated
+          .split(/[;,\n]+/)
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean);
+        outputType = values.filter((v): v is OutputType => v === "image" || v === "video" || v === "voice");
+      }
+    }
+  }
+
   return {
     insight,
     relevantModels,
+    outputType,
   };
 };
 
@@ -167,6 +192,10 @@ const buildSearchFilter = (query: string): QueryDatabaseParameters["filter"] => 
     {
       property: RELEVANT_MODELS_PROPERTY_NAME,
       rich_text: { contains: query },
+    },
+    {
+      property: OUTPUT_TYPE_PROPERTY_NAME,
+      multi_select: { contains: query },
     },
   ],
 });

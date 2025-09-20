@@ -47,6 +47,7 @@ export const genAiRecipeAgent = new Agent({
 
   - When getting best practices, use the exact prompt provided by the user, do not modify it.
   - Only use information from best practices, do not invent anything.
+  - Ignore best practices that are not relevant to the user's desired output type e.g. if the user wants an image, ignore best practices that are only relevant to videos.
   - If you can't get best practices, return an error message, do not try to come up with a recipe yourself.
   - If the user query doesn't look like a GenAI prompt, return an error message.
   - The recipe / output should be a JSON object in this exact format: { model: string; optimisedPrompt: string; explanation: string }.

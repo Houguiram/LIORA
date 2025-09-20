@@ -2,9 +2,12 @@ import { Effect, Context } from "effect";
 import { TaggedError } from "effect/Data";
 import { NotionBestPracticeRepository } from "./notion-repository";
 
+export type OutputType = "image" | "video" | "voice";
+
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
+  outputType: OutputType[];
 }
 class ConfigurationError extends TaggedError("ConfigurationError")<{
   missing: string[];
@@ -32,11 +35,13 @@ const mockValues: BestPractice[] = [
   {
     insight: "Midjourney v7 is the best at all types of images at the moment.",
     relevantModels: ["midjourney-v7"],
+    outputType: ["image"],
   },
   {
     insight:
       'Midjourney v7 gives the best results when prompted in a JSON format like { "subject": "tea pot", "lighting": "bright outdoor", ... }',
     relevantModels: ["midjourney-v7"],
+    outputType: ["image"],
   },
 ];
 
