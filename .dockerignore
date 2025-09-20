@@ -1,0 +1,14 @@
+node_modules
+dist
+.mastra
+.env
+.env.*
+*.db
+*.db-*
+output.txt
+coverage
+Dockerfile*
+README.md
+**/.git
+**/.gitignore
+
