@@ -15,6 +15,10 @@ description = "Notion API token for Best Practice repository"
 type = "string"
 description = "Notion database ID for Best Practices"
 
+[options.FAL_KEY]
+type = "string"
+description = "FAL API key for Fal generation"
+
 [options.TIMEOUT_MS]
 type = "string"
 description = "Connection/tool timeouts in ms"

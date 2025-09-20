@@ -53,8 +53,9 @@ const agentSystemPrompt = `
   - When calling best practices, use the exact user prompt.
   - Only use information found in best practices; do not invent techniques.
   - Ignore best practices that are not relevant to the requested output type.
-  - If best practices cannot be retrieved or are empty, return an error message.
-  - If tool execution fails or no output URL is found, return an error message.
+  - If best practices cannot be retrieved or are empty, send an error message.
+  - If tool execution fails or no output URL is found, send an error message.
+  - To send a result or an error message, use the appropriate tool.
 `;
 
 async function main() {
