@@ -18,7 +18,7 @@ echo "Agent directory: $PROJECT_DIR"
 cd "$PROJECT_DIR" || fatal "Could not cd to '$PROJECT_DIR'"
 
 echo "Installing deps (if needed)..."
-npm ci --silent || npm install --silent
+# npm ci --silent || npm install --silent
 
 echo "Running $TS_ENTRY..."
 npx tsx "src/coral/$TS_ENTRY"

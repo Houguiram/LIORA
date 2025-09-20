@@ -91,7 +91,7 @@ async function main() {
   console.log("Initializing MCP tool discovery...");
   const coralTools = await mcp.getTools();
   const coralResources = await mcp.resources.list();
-  console.log({coralResources});
+  console.log(JSON.stringify(coralResources, null, 2));
   console.log(
     `Discovered ${Object.keys(coralTools).length} Coral tools: ${listToolKeys(
       coralTools,
