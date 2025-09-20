@@ -64,15 +64,48 @@ const tokenOverlap = (a: string, b: string): number => {
 };
 
 export const resolveFalEndpoint = (modelName: string): string => {
-  const input = normalize(modelName);
+  const inputNormalized = normalize(modelName);
+  if (inputNormalized.length === 0) return DEFAULT_FAL_ENDPOINT;
+
+  const inputTokens = new Set(inputNormalized.split("-").filter(Boolean));
+
+  // 1) Prefer endpoints that contain ALL input tokens (subset match)
+  type Candidate = { endpoint: string; normalized: string; tokens: Set<string> };
+  const candidates: Candidate[] = VALID_FAL_ENDPOINTS.map((endpoint) => {
+    const normalized = normalize(endpoint);
+    const tokens = new Set(normalized.split("-").filter(Boolean));
+    return { endpoint, normalized, tokens };
+  });
+
+  const fullMatches = candidates.filter(({ tokens }) => {
+    for (const token of inputTokens) {
+      if (!tokens.has(token)) return false;
+    }
+    return true;
+  });
+
+  if (fullMatches.length > 0) {
+    // Break ties by choosing the candidate with the fewest tokens,
+    // then by smallest edit distance to keep results intuitive.
+    fullMatches.sort((a, b) => {
+      const tokenDiff = a.tokens.size - b.tokens.size;
+      if (tokenDiff !== 0) return tokenDiff;
+      return (
+        levenshtein(inputNormalized, a.normalized) -
+        levenshtein(inputNormalized, b.normalized)
+      );
+    });
+    return fullMatches[0].endpoint;
+  }
+
+  // 2) Fallback: fuzzy match using overlap-weighted Levenshtein
   let best = DEFAULT_FAL_ENDPOINT;
   let bestScore = Number.NEGATIVE_INFINITY;
 
-  for (const endpoint of VALID_FAL_ENDPOINTS) {
-    const candidate = normalize(endpoint);
-    const distance = levenshtein(input, candidate);
-    const overlap = tokenOverlap(input, candidate);
-    const score = overlap * 10 - distance; // favor token matches strongly
+  for (const { endpoint, normalized } of candidates) {
+    const distance = levenshtein(inputNormalized, normalized);
+    const overlap = tokenOverlap(inputNormalized, normalized);
+    const score = overlap * 25 - distance; // heavier weight on token overlap
     if (score > bestScore) {
       bestScore = score;
       best = endpoint;
