@@ -1,5 +1,5 @@
 [agent]
-name = "genai-recipe-agent"
+name = "LIORA"
 version = "0.0.1"
 description = "An agent that can generate images or videos, automatically picking the best models and prompts at any time"
 
