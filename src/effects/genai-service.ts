@@ -19,17 +19,13 @@ export class GenAiService extends Context.Tag("GenAiService")<
 
 export const DEFAULT_FAL_ENDPOINT = "fal-ai/flux/dev";
 
-// Curated list of known fal.ai generation endpoints.
-// Expand this list as new endpoints are needed.
+// Curated list of valid fal.ai generation endpoints.
 const VALID_FAL_ENDPOINTS = [
-  "fal-ai/flux/dev",
-  "fal-ai/flux/schnell",
-  "fal-ai/flux-pro",
-  "fal-ai/flux-realism",
-  "fal-ai/llama-3.2-vision",
   "fal-ai/nano-banana",
-  "fal-ai/black-forest-labs/flux/dev",
-  "fal-ai/black-forest-labs/flux/schnell",
+  "fal-ai/veo3",
+  "fal-ai/bytedance/seedream/v4/text-to-image",
+  "fal-ai/kling-video/v2/master/text-to-video",
+  "fal-ai/ideogram/v3",
 ] as const;
 
 const normalize = (value: string): string =>
