@@ -19,16 +19,16 @@ const listToolKeys = (tools: Record<string, unknown>) =>
 //TODO: consider using the API to get type safe client for tools -- http://localhost:5555/api_v1.json
 
 // Build the Coral bridge system prompt (mirrors the Python example steps)
-const buildCoralBridgeSystemPrompt = (
-  coralTools: Record<string, unknown>,
-  localTools: Record<string, unknown>,
-) => `
-VERY IMPORTANT:
+// const buildCoralBridgeSystemPrompt = (
+//   coralTools: Record<string, unknown>,
+//   localTools: Record<string, unknown>,
+// ) => `
+// VERY IMPORTANT:
 
-<important>
-You won't get an actual usage message as input. Instead, use the relevant tool to wait for mentions, and use the relevant tool to reply. Here are the tools: ${listToolKeys(coralTools)}
-</important>
-`;
+// <important>
+// You won't get an actual usage message as input. Instead, use the relevant tool to wait for mentions, and use the relevant tool to reply. Here are the tools: ${listToolKeys(coralTools)}
+// </important>
+// `;
 
 // Recipe agent system prompt (kept in sync with src/mastra/agents/genai-recipe-agent.ts)
 const agentSystemPrompt = `
@@ -134,6 +134,7 @@ async function main() {
 
   // Helper: invoke a tool across common call shapes
   const invokeTool = async (tool: any, input: any) => {
+    console.log("Invoking tool:", tool, input);
     // 1) direct function
     if (typeof tool === "function") {
       return await tool(input);
@@ -267,6 +268,9 @@ async function main() {
           }
 
           // 2) Try to send response back with schema fallbacks
+
+          console.log("Sending answer:", answer);
+
           const payloads = [
             { threadId, recipientId: senderId, content: answer },
             { thread_id: threadId, recipient_id: senderId, content: answer },
@@ -281,6 +285,7 @@ async function main() {
               break;
             } catch (e) {
               // try next shape
+              console.error("Error sending message:", e);
             }
           }
           if (!sent) {
