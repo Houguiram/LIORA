@@ -152,19 +152,56 @@ async function main() {
     throw new Error("Unsupported tool shape for invocation");
   };
 
-  // Helper: safely extract thread/sender/content from mention payloads
-  const extractMention = (m: any) => {
-    const threadId =
+  // Helper: extract one or more messages from Coral mention payloads
+  const extractMentions = (m: any) => {
+    const results: Array<{ threadId: string; senderId: string; content: string }> = [];
+
+    const directThreadId =
       m?.threadId ?? m?.thread_id ?? m?.thread ?? m?.data?.threadId ?? m?.data?.thread_id;
-    const senderId =
+    const directSenderId =
       m?.senderId ?? m?.sender_id ?? m?.sender ?? m?.from ?? m?.data?.senderId ?? m?.data?.sender_id;
-    const content =
+    const directContent =
       m?.content ?? m?.message ?? m?.text ?? m?.data?.content ?? m?.data?.message ?? m?.data?.text;
-    return { threadId, senderId, content } as {
-      threadId?: string;
-      senderId?: string;
-      content?: string;
-    };
+
+    if (directThreadId && directSenderId && typeof directContent === "string") {
+      results.push({ threadId: directThreadId, senderId: directSenderId, content: directContent });
+      return results;
+    }
+
+    // Coral may wrap the payload in a content array containing a JSON string with { messages: [...] }
+    const contentArray = Array.isArray(m?.content) ? m.content : undefined;
+    if (contentArray) {
+      for (const part of contentArray) {
+        const text = typeof part?.text === "string" ? part.text : undefined;
+        if (!text) continue;
+        try {
+          const parsed = JSON.parse(text);
+          const msgs = Array.isArray(parsed?.messages) ? parsed.messages : [];
+          if (msgs.length > 0) {
+            for (const msg of msgs) {
+              const threadId = msg?.threadId ?? msg?.thread_id;
+              const senderId = msg?.senderId ?? msg?.sender_id;
+              const content = msg?.content ?? msg?.text ?? msg?.message;
+              if (threadId && senderId && typeof content === "string") {
+                results.push({ threadId, senderId, content });
+              }
+            }
+          } else {
+            // In case the JSON is a single message-like object
+            const threadId = parsed?.threadId ?? parsed?.thread_id;
+            const senderId = parsed?.senderId ?? parsed?.sender_id;
+            const content = parsed?.content ?? parsed?.text ?? parsed?.message;
+            if (threadId && senderId && typeof content === "string") {
+              results.push({ threadId, senderId, content });
+            }
+          }
+        } catch {
+          // not JSON, ignore
+        }
+      }
+    }
+
+    return results;
   };
 
   // Resolve Coral tools we need
@@ -210,46 +247,48 @@ async function main() {
       }
 
       for (const m of mentions) {
-        const { threadId, senderId, content } = extractMention(m);
-        if (!threadId || !senderId) {
+        const unpacked = extractMentions(m);
+        if (unpacked.length === 0) {
           console.warn("Received mention without routing identifiers:", m);
           continue;
         }
 
-        let answer = "";
-        try {
-          const generated = await localExecutionAgent.generate(
-            typeof content === "string" ? content : JSON.stringify(content ?? {}),
-          );
-          // Agent.generate returns a string; if not, stringify
-          answer = typeof generated === "string" ? generated : JSON.stringify(generated);
-        } catch (e) {
-          console.error("Error generating response from local agent:", e);
-          answer = `error: ${(e as Error).message}`;
-        }
-
-        // 2) Try to send response back with schema fallbacks
-        const payloads = [
-          { threadId, recipientId: senderId, content: answer },
-          { thread_id: threadId, recipient_id: senderId, content: answer },
-          { threadId, to: senderId, content: answer },
-        ];
-
-        let sent = false;
-        for (const p of payloads) {
+        for (const { threadId, senderId, content } of unpacked) {
+          let answer = "";
           try {
-            await invokeTool(sendToolEntry.tool, p);
-            sent = true;
-            break;
+            const generated = await localExecutionAgent.generate(
+              typeof content === "string" ? content : JSON.stringify(content ?? {}),
+            );
+            // Agent.generate returns a string; if not, stringify
+            answer = typeof generated === "string" ? generated : JSON.stringify(generated);
           } catch (e) {
-            // try next shape
+            console.error("Error generating response from local agent:", e);
+            answer = `error: ${(e as Error).message}`;
           }
-        }
-        if (!sent) {
-          console.error("Failed to send message with all payload shapes", {
-            threadId,
-            senderId,
-          });
+
+          // 2) Try to send response back with schema fallbacks
+          const payloads = [
+            { threadId, recipientId: senderId, content: answer },
+            { thread_id: threadId, recipient_id: senderId, content: answer },
+            { threadId, to: senderId, content: answer },
+          ];
+
+          let sent = false;
+          for (const p of payloads) {
+            try {
+              await invokeTool(sendToolEntry.tool, p);
+              sent = true;
+              break;
+            } catch (e) {
+              // try next shape
+            }
+          }
+          if (!sent) {
+            console.error("Failed to send message with all payload shapes", {
+              threadId,
+              senderId,
+            });
+          }
         }
       }
 
