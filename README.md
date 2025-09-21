@@ -5,7 +5,7 @@ This agent bridges Coral MCP tools with local Mastra tools to generate images/vi
 ### Prerequisites
 
 - Coral Server running and reachable by the container
-- API keys for providers you use (OpenAI, Fal, Notion)
+- API keys for providers you use (Mistral, Fal, Notion)
 
 ### Setup
 
@@ -32,3 +32,7 @@ docker run --rm \
 ```
 
 If you cannot use host networking, set `CORAL_SSE_URL` in `.env` to the Coral Server address resolvable from inside the container.
+
+### Environment
+
+Set `MISTRAL_API_KEY` for the Mistral provider used via `@ai-sdk/mistral`.

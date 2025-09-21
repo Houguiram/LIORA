@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { mistral } from "@ai-sdk/mistral";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
@@ -14,7 +14,7 @@ const ollama = createOllama({
 });
 const modelId = "llama3.2";
 const localModel = ollama.chat(modelId, { simulateStreaming: true });
-const onlineModel = openai("gpt-5-mini");
+const onlineModel = mistral("mistral-large-latest");
 
 const model = IS_OFFLINE ? localModel : onlineModel;
 
