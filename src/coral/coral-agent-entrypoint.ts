@@ -7,6 +7,8 @@ import { createOllama } from "ollama-ai-provider";
 import { bestPracticeTool } from "../mastra/tools/best-practice-tool";
 import { genaiExecutionTool } from "../mastra/tools/genai-execution-tool";
 import { IS_OFFLINE } from "../utils/offline";
+import { bestPracticeToolWithPayment } from "../mastra/tools/best-practice-tool-with-payment";
+import { genaiExecutionToolWithPayment } from "../mastra/tools/genai-execution-tool-with-payment";
 
 // Utility: simple sleep
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -110,7 +112,7 @@ async function main() {
   }
 
   // Local tools (Mastra)
-  const localTools = { bestPracticeTool, genaiExecutionTool } as const;
+  const localTools = { bestPracticeToolWithPayment, genaiExecutionToolWithPayment } as const;
   console.log(
     `Local tools: ${listToolKeys(localTools)} | Total tools: ${Object.keys({
       ...coralTools,

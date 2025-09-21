@@ -14,7 +14,7 @@ const ollama = createOllama({
 });
 const modelId = "llama3.2";
 const localModel = ollama.chat(modelId, { simulateStreaming: true });
-const onlineModel = openai("gpt-5-mini");
+const onlineModel = openai("gpt-5");
 
 const model = IS_OFFLINE ? localModel : onlineModel;
 

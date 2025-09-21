@@ -7,9 +7,9 @@ import {
   BestPracticeServiceMock,
 } from "../../effects/best-practice-service";
 import { IS_OFFLINE } from "../../utils/offline";
-import { PaymentService, PaymentServiceLive, PaymentServiceMock } from "../../effects/payment-service";
+import { PaymentService, PaymentServiceLive } from "../../effects/payment-service";
 
-export const bestPracticeTool = createTool({
+export const bestPracticeToolWithPayment = createTool({
   id: "get-best-practices",
   description: "Get relevant best practices for a GenAI prompt",
   inputSchema: z.object({
@@ -37,7 +37,7 @@ export const bestPracticeTool = createTool({
         )
       ),
       Effect.provideService(BestPracticeService, service),
-      Effect.provideService(PaymentService, PaymentServiceMock),
+      Effect.provideService(PaymentService, PaymentServiceLive),
     );
 
     return await Effect.runPromise(program);

@@ -73,7 +73,6 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
       return filteredOutput;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
-      Effect.provideService(PaymentService, PaymentServiceLive),
       Effect.mapError((err) => {
         if (typeof err === 'object' && err !== null && '_tag' in err) {
           switch (err._tag) {

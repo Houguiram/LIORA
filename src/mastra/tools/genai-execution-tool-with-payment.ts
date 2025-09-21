@@ -4,9 +4,9 @@ import { z } from "zod";
 import { GenAiService, GenAiServiceLive, resolveFalEndpoint } from "../../effects/genai-service";
 import { FalService, FalServiceLive, FalServiceMock } from "../../effects/fal-service";
 import { IS_OFFLINE } from "../../utils/offline";
-import { PaymentService, PaymentServiceLive, PaymentServiceMock } from "../../effects/payment-service";
+import { PaymentService, PaymentServiceLive } from "../../effects/payment-service";
 
-export const genaiExecutionTool = createTool({
+export const genaiExecutionToolWithPayment = createTool({
   id: "genai-execute",
   description: "Generate images or videos using a generic model name",
   inputSchema: z.object({
@@ -31,7 +31,7 @@ export const genaiExecutionTool = createTool({
         ),
         Effect.provideService(FalService, falServiceImpl),
         Effect.provideService(GenAiService, GenAiServiceLive),
-        Effect.provideService(PaymentService, PaymentServiceMock),
+        Effect.provideService(PaymentService, PaymentServiceLive),
       );
     return await Effect.runPromise(program);
   },
