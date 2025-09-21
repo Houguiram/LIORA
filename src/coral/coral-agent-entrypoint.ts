@@ -31,6 +31,7 @@ const agentSystemPrompt = `
   - If best practices include prompting techniques for that model, optimize the user's prompt accordingly; otherwise use the original prompt unchanged.
   - Call the GenAI execution tool with { model, prompt } to generate the asset.
   - Extract a public URL to the generated asset from the tool response. If multiple URLs exist, choose the primary URL that matches the requested type.
+  - If the best way to achieve the user's goal is to go through multiple steps, go through the steps one by one, reusing the URL of outputs from previous steps as input to the next step as needed.
 
   Rules:
   - When calling best practices, use the exact user prompt.

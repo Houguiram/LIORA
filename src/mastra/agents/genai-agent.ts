@@ -31,6 +31,7 @@ export const genAiAgent = new Agent({
   5. If best practices include prompting techniques for that model, optimize the user's prompt accordingly; otherwise use the original prompt unchanged.
   6. Call the GenAI execution tool with { model, prompt } to generate the asset.
   7. Extract a public URL to the generated asset from the tool response. If multiple URLs exist, choose the primary URL that matches the requested type.
+  8. If the best way to achieve the user's goal is to go through multiple steps, go through the steps one by one, reusing the URL of outputs from previous steps as input to the next step as needed.
 
   Output format (return only this JSON, nothing else):
   { url: string; model: string; prompt: string; explanation: string }
