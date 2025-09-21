@@ -17,9 +17,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const listToolKeys = (tools: Record<string, unknown>) =>
   Object.keys(tools).sort().join(", ");
 
-//TODO: get resources to get the right prompt for tools
-//TODO: consider using the API to get type safe client for tools -- http://localhost:5555/api_v1.json
-
 // Recipe agent system prompt (kept in sync with src/mastra/agents/genai-recipe-agent.ts)
 const agentSystemPrompt = `
   You generate images or videos end-to-end using the provided tools. Your purpose is to return an actual generated asset, not a recipe.

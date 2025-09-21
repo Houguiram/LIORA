@@ -43,14 +43,6 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
     ]),
 };
 
-// const VALID_MODELS = [
-//   "Ideogram",
-//   "Kling",
-//   "Imagen Nano Banana",
-//   "Veo3",
-//   "Seedream",
-// ];
-
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
     Effect.gen(function* () {
@@ -58,19 +50,7 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
       yield* payment.claimUSD(0.1);
       const repository = yield* BestPracticeRepository;
       const output = yield* repository.getAll(); //TODO: add smarter logic e.g. RAG retrieval or search
-      const filteredOutput = output
-        // .filter(
-        //   (bp) =>
-        //     bp.relevantModels.length === 0 ||
-        //     VALID_MODELS.includes(bp.relevantModels[0])
-        // )
-        // .filter(
-        //   (bp) =>
-        //     !bp.insight.toLowerCase().includes("runway") &&
-        //     !bp.insight.toLowerCase().includes("midjourney")
-        // )
-        // .filter((bp) => !bp.multistep);
-      return filteredOutput;
+      return output;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
       Effect.mapError((err) => {
