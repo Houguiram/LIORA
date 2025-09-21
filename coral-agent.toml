@@ -28,6 +28,6 @@ default = "30000"
 command = ["bash", "-c", "./run_agent.sh"]
 
 [runtimes.docker]
-image = "liora:latest" 
+image = "marinfc/first-concepts:latest" 
 
 
