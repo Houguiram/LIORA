@@ -7,7 +7,9 @@
     "test": "vitest",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "start:coral:liora-recipe": "tsx src/coral/liora-recipe-coral-agent-entrypoint.ts",
+    "start:coral:liora-generator": "tsx src/coral/liora-generator-coral-agent-entrypoint.ts"
   },
   "keywords": [],
   "author": "",

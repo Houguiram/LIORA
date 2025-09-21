@@ -32,3 +32,28 @@ docker run --rm \
 ```
 
 If you cannot use host networking, set `CORAL_SSE_URL` in `.env` to the Coral Server address resolvable from inside the container.
+
+### Run locally
+
+Use one of the provided npm scripts to start a specific Coral agent entrypoint:
+
+```bash
+# Liora: returns simple recipes (model + optimised prompt)
+npm run start:coral:liora-recipe
+
+# Liora: generates images/videos end-to-end
+npm run start:coral:liora-generator
+```
+
+Alternatively, with the helper script you can override the TypeScript entrypoint via `TS_ENTRY`:
+
+```bash
+TS_ENTRY="liora-recipe-coral-agent-entrypoint.ts" ./run_agent.sh
+TS_ENTRY="liora-generator-coral-agent-entrypoint.ts" ./run_agent.sh
+```
+
+Environment variables:
+
+- `CORAL_SSE_URL`: Coral Server SSE URL (required)
+- `CORAL_AGENT_ID`: Identifier for the agent instance (optional)
+- `TIMEOUT_MS`: Tool and SSE timeouts in ms (optional)
