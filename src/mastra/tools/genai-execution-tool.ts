@@ -12,6 +12,8 @@ export const genaiExecutionTool = createTool({
   inputSchema: z.object({
     model: z.string().describe("Generic model name, e.g. 'nano banana' or 'flux dev'"),
     prompt: z.string().describe("User prompt for generation"),
+    outputType: z.enum(["image", "video"]).describe("Expected type of output: 'image' or 'video'"),
+    imageUrl: z.string().optional().describe("Optional image URL for image-to-video or image-to-image generation"),
   }),
   outputSchema: z.object({
     error: z.string().optional(),
@@ -22,11 +24,11 @@ export const genaiExecutionTool = createTool({
   execute: async ({ context }) => {
     console.log("genai execution tool", context);
     const falServiceImpl = IS_OFFLINE ? FalServiceMock : FalServiceLive;
-    const program = generateRunnable(context.model, context.prompt)
+    const program = generateRunnable(context.model, context.prompt, context.outputType, context.imageUrl)
       .pipe(
         Effect.tap((output) =>
           Effect.log(
-            `genai execution: { model: "${context.model}", resolved: "${resolveFalEndpoint(context.model)}", prompt: "${context.prompt}", output: ${safeStringify(output)} }`,
+            `genai execution: { model: "${context.model}", resolved: "${resolveFalEndpoint(context.model, context.outputType, Boolean(context.imageUrl))}", prompt: "${context.prompt}", outputType: "${context.outputType}", imageUrl: "${context.imageUrl || 'none'}", output: ${safeStringify(output)} }`,
           ),
         ),
         Effect.provideService(FalService, falServiceImpl),
@@ -40,12 +42,14 @@ export const genaiExecutionTool = createTool({
 const generateRunnable = (
   model: string,
   prompt: string,
+  outputType: "image" | "video",
+  imageUrl?: string,
 ) =>
   Effect.gen(function* () {
     const service = yield* GenAiService;
-    const resolvedModel = resolveFalEndpoint(model);
+    const resolvedModel = resolveFalEndpoint(model, outputType, Boolean(imageUrl));
     const response = yield* service
-      .generate(model, prompt)
+      .generate(model, prompt, outputType, imageUrl)
       .pipe(Effect.catchAll((err) => Effect.succeed({ error: err.message, resolvedModel })));
     const isError = "error" in (response as any);
     if (isError) {

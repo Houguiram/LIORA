@@ -43,13 +43,13 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
     ]),
 };
 
-const VALID_MODELS = [
-  "Ideogram",
-  "Kling",
-  "Imagen Nano Banana",
-  "Veo3",
-  "Seedream",
-];
+// const VALID_MODELS = [
+//   "Ideogram",
+//   "Kling",
+//   "Imagen Nano Banana",
+//   "Veo3",
+//   "Seedream",
+// ];
 
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
@@ -59,17 +59,17 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
       const repository = yield* BestPracticeRepository;
       const output = yield* repository.getAll(); //TODO: add smarter logic e.g. RAG retrieval or search
       const filteredOutput = output
-        .filter(
-          (bp) =>
-            bp.relevantModels.length === 0 ||
-            VALID_MODELS.includes(bp.relevantModels[0])
-        )
-        .filter(
-          (bp) =>
-            !bp.insight.toLowerCase().includes("runway") &&
-            !bp.insight.toLowerCase().includes("midjourney")
-        )
-        .filter((bp) => !bp.multistep);
+        // .filter(
+        //   (bp) =>
+        //     bp.relevantModels.length === 0 ||
+        //     VALID_MODELS.includes(bp.relevantModels[0])
+        // )
+        // .filter(
+        //   (bp) =>
+        //     !bp.insight.toLowerCase().includes("runway") &&
+        //     !bp.insight.toLowerCase().includes("midjourney")
+        // )
+        // .filter((bp) => !bp.multistep);
       return filteredOutput;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
