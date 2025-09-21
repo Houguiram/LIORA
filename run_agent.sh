@@ -6,7 +6,7 @@ fatal () {
     exit 1
 }
 
-TS_ENTRY="coral-agent-entrypoint.ts"
+TS_ENTRY=${TS_ENTRY:-"coral-agent-entrypoint.ts"}
 
 # Determine script directory
 SCRIPT_DIR=$(dirname "$(realpath "$0" 2>/dev/null || readlink -f "$0" 2>/dev/null || echo "$0")")
