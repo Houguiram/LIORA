@@ -7,6 +7,7 @@ import {
   BestPracticeServiceMock,
 } from "../../effects/best-practice-service";
 import { IS_OFFLINE } from "../../utils/offline";
+import { PaymentService, PaymentServiceLive } from "../../effects/payment-service";
 
 export const bestPracticeTool = createTool({
   id: "get-best-practices",
@@ -35,7 +36,8 @@ export const bestPracticeTool = createTool({
           `Got best practices for prompt "${context.prompt}"`
         )
       ),
-      Effect.provideService(BestPracticeService, service)
+      Effect.provideService(BestPracticeService, service),
+      Effect.provideService(PaymentService, PaymentServiceLive),
     );
 
     return await Effect.runPromise(program);

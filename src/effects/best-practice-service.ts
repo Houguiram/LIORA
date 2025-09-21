@@ -3,6 +3,7 @@ import {
   BestPracticeRepository,
   BestPracticeRepositoryLive,
 } from "./best-practice-repository/best-practice-repository";
+import { PaymentService, PaymentServiceLive } from "./payment-service";
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
@@ -10,7 +11,7 @@ export interface BestPractice {
 interface BestPracticeServiceShape {
   readonly getRelevantForPrompt: (
     prompt: string
-  ) => Effect.Effect<BestPractice[], Error>;
+  ) => Effect.Effect<BestPractice[], Error, PaymentService>;
 }
 export class BestPracticeService extends Context.Tag("BestPracticeService")<
   BestPracticeService,
@@ -52,6 +53,8 @@ const VALID_MODELS = [
 export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
     Effect.gen(function* () {
+      const payment = yield* PaymentService;
+      yield* payment.claim(1);
       const repository = yield* BestPracticeRepository;
       const output = yield* repository.getAll(); //TODO: add smarter logic e.g. RAG retrieval or search
       const filteredOutput = output
@@ -69,6 +72,7 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
       return filteredOutput;
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
+      Effect.provideService(PaymentService, PaymentServiceLive),
       Effect.catchAll((err) => {
         switch (err._tag) {
           case "ConfigurationError": {

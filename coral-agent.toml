@@ -27,4 +27,7 @@ default = "30000"
 [runtimes.executable]
 command = ["bash", "-c", "./run_agent.sh"]
 
+[runtimes.docker]
+image = "liora:latest" 
+
 

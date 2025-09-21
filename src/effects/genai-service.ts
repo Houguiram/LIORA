@@ -1,5 +1,6 @@
 import { Effect, Context } from "effect";
 import { FalService } from "./fal-service";
+import { PaymentService } from "./payment-service";
 
 export interface GenAiServiceShape {
   readonly generate: (
@@ -8,7 +9,7 @@ export interface GenAiServiceShape {
   ) => Effect.Effect<{
     requestId: string;
     data: unknown;
-  }, Error, FalService>;
+  }, Error, FalService | PaymentService>;
 }
 
 export class GenAiService extends Context.Tag("GenAiService")<
@@ -118,6 +119,8 @@ export const resolveFalEndpoint = (modelName: string): string => {
 export const GenAiServiceLive: GenAiServiceShape = {
   generate: (modelName, prompt) =>
     Effect.gen(function* () {
+      const payment = yield* PaymentService;
+      yield* payment.claim(1);
       const fal = yield* FalService;
       const endpoint = resolveFalEndpoint(modelName);
       const result = yield* fal.generate(endpoint, prompt);
