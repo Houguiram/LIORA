@@ -4,9 +4,13 @@ import {
   BestPracticeRepositoryLive,
 } from "./best-practice-repository/best-practice-repository";
 import { PaymentService, PaymentServiceLive } from "./payment-service";
+export type OutputType = "image" | "video" | "voice";
+
 export interface BestPractice {
   insight: string;
   relevantModels: string[];
+  outputType: OutputType[];
+  multistep: boolean;
 }
 interface BestPracticeServiceShape {
   readonly getRelevantForPrompt: (
@@ -18,13 +22,6 @@ export class BestPracticeService extends Context.Tag("BestPracticeService")<
   BestPracticeServiceShape
 >() {}
 
-// Type-safe "assume never" for exhaustive checks returning an Effect
-const assumeNeverEffect = <A>(_value: never): Effect.Effect<A, Error> => {
-  const errorMessage = "Unknown error";
-  return Effect.logError(errorMessage).pipe(
-    Effect.andThen(() => Effect.fail(new Error(errorMessage)))
-  );
-};
 
 export const BestPracticeServiceMock: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
@@ -33,11 +30,15 @@ export const BestPracticeServiceMock: BestPracticeServiceShape = {
         insight:
           "Midjourney v7 is the best at all types of images at the moment.",
         relevantModels: ["midjourney-v7"],
+        outputType: ["image"],
+        multistep: false,
       },
       {
         insight:
           'Midjourney v7 gives the best results when prompted in a JSON format like { "subject": "tea pot", "lighting": "bright outdoor", ... }',
         relevantModels: ["midjourney-v7"],
+        outputType: ["image"],
+        multistep: false,
       },
     ]),
 };
@@ -54,7 +55,7 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
   getRelevantForPrompt: (_prompt: string) =>
     Effect.gen(function* () {
       const payment = yield* PaymentService;
-      yield* payment.claim(1);
+      yield* payment.claimUSD(0.1);
       const repository = yield* BestPracticeRepository;
       const output = yield* repository.getAll(); //TODO: add smarter logic e.g. RAG retrieval or search
       const filteredOutput = output
@@ -73,24 +74,21 @@ export const BestPracticeServiceLive: BestPracticeServiceShape = {
     }).pipe(
       Effect.provideService(BestPracticeRepository, BestPracticeRepositoryLive),
       Effect.provideService(PaymentService, PaymentServiceLive),
-      Effect.catchAll((err) => {
-        switch (err._tag) {
-          case "ConfigurationError": {
-            const errorMessage =
-              "[ConfigurationError] Missing config: " + err.missing.join(", ");
-            return Effect.logError(errorMessage).pipe(
-              Effect.andThen(() => Effect.fail(new Error(errorMessage)))
-            );
+      Effect.mapError((err) => {
+        if (typeof err === 'object' && err !== null && '_tag' in err) {
+          switch (err._tag) {
+            case "ConfigurationError": {
+              const errorMessage =
+                "[ConfigurationError] Missing config: " + (err as any).missing.join(", ");
+              return new Error(errorMessage);
+            }
+            case "NotionQueryError": {
+              const errorMessage = "[NotionQueryError] " + (err as any).message;
+              return new Error(errorMessage);
+            }
           }
-          case "NotionQueryError": {
-            const errorMessage = "[NotionQueryError] " + err.message;
-            return Effect.logError(errorMessage).pipe(
-              Effect.andThen(() => Effect.fail(new Error(errorMessage)))
-            );
-          }
-          default:
-            return assumeNeverEffect<BestPractice[]>(err);
         }
+        return err instanceof Error ? err : new Error(String(err));
       })
     ),
 };

@@ -120,7 +120,7 @@ export const GenAiServiceLive: GenAiServiceShape = {
   generate: (modelName, prompt) =>
     Effect.gen(function* () {
       const payment = yield* PaymentService;
-      yield* payment.claim(1);
+      yield* payment.claimUSD(0.3);
       const fal = yield* FalService;
       const endpoint = resolveFalEndpoint(modelName);
       const result = yield* fal.generate(endpoint, prompt);

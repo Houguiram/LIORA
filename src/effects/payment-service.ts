@@ -7,7 +7,7 @@ export interface PaymentClaimResult {
 }
 
 export interface PaymentServiceShape {
-  readonly claim: (
+  readonly claimUSD: (
     amount: number,
   ) => Effect.Effect<PaymentClaimResult, Error>;
 }
@@ -18,12 +18,12 @@ export class PaymentService extends Context.Tag("PaymentService")<
 >() {}
 
 export const PaymentServiceMock: PaymentServiceShape = {
-  claim: (amount: number) =>
+  claimUSD: (amount: number) =>
     Effect.succeed({ remainingBudget: 100, coralUsdPrice: 1 }),
 };
 
 export const PaymentServiceLive: PaymentServiceShape = {
-  claim: (amount: number) =>
+  claimUSD: (amount: number) =>
     Effect.gen(function* () {
       const missing: string[] = [];
       const CORAL_API_URL = process.env.CORAL_API_URL ?? "";
@@ -59,7 +59,7 @@ export const PaymentServiceLive: PaymentServiceShape = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              amount: { type: "coral", amount },
+              amount: { type: "usd", amount },
             }),
           });
 
