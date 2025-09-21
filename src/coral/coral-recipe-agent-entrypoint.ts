@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Agent } from "@mastra/core/agent";
 import { MCPClient } from "@mastra/mcp";
-import { openai } from "@ai-sdk/openai";
+import { mistral } from "@ai-sdk/mistral";
 import { createOllama } from "ollama-ai-provider";
 
 import { bestPracticeTool } from "../mastra/tools/best-practice-tool";
@@ -120,7 +120,7 @@ async function main() {
 
   // Model selection (reuse offline pattern from project)
   const ollama = createOllama({ baseURL: `http://localhost:11434/api` });
-  const model = IS_OFFLINE ? ollama.chat("llama3.2", { simulateStreaming: true }) : openai("gpt-5");
+  const model = IS_OFFLINE ? ollama.chat("llama3.2", { simulateStreaming: true }) : mistral("mistral-large-latest");
 
   // Compose final instructions: Coral bridge + Recipe agent prompt
   const instructions = `${

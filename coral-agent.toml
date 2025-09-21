@@ -3,9 +3,9 @@ name = "LIORA"
 version = "0.0.1"
 description = "An agent that can generate images or videos, automatically picking the best models and prompts at any time"
 
-[options.OPENAI_API_KEY]
+[options.MISTRAL_API_KEY]
 type = "string"
-description = "API key for OpenAI"
+description = "API key for Mistral"
 
 [options.NOTION_API_TOKEN]
 type = "string"
